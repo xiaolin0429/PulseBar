@@ -1,94 +1,114 @@
+import AppKit
 import SwiftUI
 
 struct DashboardView: View {
     @EnvironmentObject private var model: AppModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("PulseBar")
-                        .font(.headline)
-                    Text(statusText)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Button {
-                    model.togglePaused()
-                } label: {
-                    Image(systemName: model.monitoringState == .paused ? "play.fill" : "pause.fill")
-                }
-                .buttonStyle(.borderless)
-                .help(model.monitoringState == .paused ? "继续监控" : "暂停监控")
-            }
-
-            GroupBox("实时采集") {
+        VStack(spacing: 0) {
+            header
+            Divider()
+            ScrollView {
                 if let snapshot = model.latest {
-                    Grid(alignment: .leading, horizontalSpacing: 20, verticalSpacing: 8) {
-                        GridRow {
-                            Label("CPU", systemImage: "cpu")
-                            Text(percent(snapshot.cpu.availableValue?.totalUsageRatio))
-                                .monospacedDigit()
-                        }
-                        GridRow {
-                            Label("内存", systemImage: "memorychip")
-                            Text(percent(snapshot.memory.availableValue?.usageRatio))
-                                .monospacedDigit()
-                        }
-                        GridRow {
-                            Label("磁盘可用", systemImage: "internaldrive")
-                            Text(
-                                snapshot.disk.availableValue?.primaryVolume
-                                    .map { MetricFormatter.bytes($0.availableCapacityBytes) } ?? "—"
-                            )
-                            .monospacedDigit()
-                        }
-                        GridRow {
-                            Label("网络", systemImage: "network")
-                            Text(
-                                snapshot.network.availableValue?.downloadBytesPerSecond
-                                    .map { "↓ \(MetricFormatter.bytesPerSecond($0))" } ?? "—"
-                            )
-                            .monospacedDigit()
-                        }
+                    LazyVStack(spacing: 12) {
+                        CPUCardView(metric: snapshot.cpu, history: model.history.cpuUsage)
+                        MemoryCardView(metric: snapshot.memory, history: model.history.memoryUsage)
+                        DiskCardView(
+                            metric: snapshot.disk,
+                            readHistory: model.history.diskRead,
+                            writeHistory: model.history.diskWrite
+                        )
+                        NetworkCardView(
+                            metric: snapshot.network,
+                            downloadHistory: model.history.networkDownload,
+                            uploadHistory: model.history.networkUpload
+                        )
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 4)
+                    .padding(12)
                 } else {
-                    HStack {
+                    VStack(spacing: 10) {
                         ProgressView()
-                            .controlSize(.small)
-                        Text("正在建立采样基线…")
+                        Text("正在读取系统指标…")
                             .foregroundStyle(.secondary)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 4)
+                    .frame(maxWidth: .infinity, minHeight: 260)
                 }
             }
-
+            .background(Color(nsColor: .windowBackgroundColor).opacity(0.65))
             Divider()
-
-            HStack {
-                Button("设置") {
-                    NSApplication.shared.sendAction(
-                        Selector(("showSettingsWindow:")),
-                        to: nil,
-                        from: nil
-                    )
-                    NSApplication.shared.activate(ignoringOtherApps: true)
-                }
-                Spacer()
-                Button("退出 PulseBar") { NSApplication.shared.terminate(nil) }
-            }
+            footer
         }
-        .padding(16)
-        .frame(width: 400)
+        .frame(width: 420)
+        .frame(minHeight: 500, idealHeight: 650, maxHeight: 720)
         .onAppear { model.setDashboardVisible(true) }
         .onDisappear { model.setDashboardVisible(false) }
     }
 
-    private var statusText: String {
+    private var header: some View {
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(Host.current().localizedName ?? "Mac")
+                    .font(.headline)
+                    .lineLimit(1)
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(statusColor)
+                        .frame(width: 6, height: 6)
+                    Text(statusText)
+                    if let snapshot = model.latest {
+                        Text("·")
+                        Text(snapshot.wallTime.formatted(.relative(presentation: .numeric)))
+                    }
+                    Text("· 运行 \(uptime)")
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button {
+                model.togglePaused()
+            } label: {
+                Image(systemName: model.monitoringState == .paused ? "play.fill" : "pause.fill")
+                    .frame(width: 16, height: 16)
+            }
+            .buttonStyle(.borderless)
+            .help(model.monitoringState == .paused ? "继续监控" : "暂停监控")
+            .accessibilityLabel(model.monitoringState == .paused ? "继续监控" : "暂停监控")
+
+            Button {
+                AppActions.openSettings()
+            } label: {
+                Image(systemName: "gearshape")
+                    .frame(width: 16, height: 16)
+            }
+            .buttonStyle(.borderless)
+            .help("打开设置")
+            .accessibilityLabel("打开设置")
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+    }
+
+    private var footer: some View {
+        HStack {
+            Button {
+                AppActions.openActivityMonitor()
+            } label: {
+                Label("活动监视器", systemImage: "waveform.path.ecg.rectangle")
+            }
+            .buttonStyle(.borderless)
+            Spacer()
+            Button("退出") {
+                NSApplication.shared.terminate(nil)
+            }
+            .buttonStyle(.borderless)
+        }
+        .font(.caption)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+    }
+
+    private var statusText: LocalizedStringKey {
         switch model.monitoringState {
         case .monitoring: "监控中"
         case .paused: "已暂停"
@@ -96,7 +116,21 @@ struct DashboardView: View {
         }
     }
 
-    private func percent(_ ratio: Double?) -> String {
-        ratio.map { "\(Int(($0 * 100).rounded()))%" } ?? "—"
+    private var statusColor: Color {
+        switch model.monitoringState {
+        case .monitoring: .green
+        case .paused: .orange
+        case .partiallyUnavailable: .yellow
+        }
+    }
+
+    private var uptime: String {
+        let seconds = Int(ProcessInfo.processInfo.systemUptime)
+        let days = seconds / 86_400
+        let hours = (seconds % 86_400) / 3_600
+        let minutes = (seconds % 3_600) / 60
+        if days > 0 { return "\(days)天 \(hours)小时" }
+        if hours > 0 { return "\(hours)小时 \(minutes)分" }
+        return "\(minutes)分钟"
     }
 }
