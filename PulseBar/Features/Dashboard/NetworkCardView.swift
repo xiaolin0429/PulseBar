@@ -5,6 +5,8 @@ struct NetworkCardView: View {
     let downloadHistory: [HistoryPoint]
     let uploadHistory: [HistoryPoint]
     @State private var explanationExpanded = false
+    @Environment(\.unitSystem) private var unitSystem
+    @Environment(\.locale) private var locale
 
     var body: some View {
         MetricCardView(title: "网络", systemImage: "network", tint: .teal) {
@@ -46,8 +48,8 @@ struct NetworkCardView: View {
                     ThroughputTrendChart(
                         primary: downloadHistory,
                         secondary: uploadHistory,
-                        primaryName: "下载",
-                        secondaryName: "上传",
+                        primaryName: String(localized: "下载", locale: locale),
+                        secondaryName: String(localized: "上传", locale: locale),
                         primaryColor: .teal,
                         secondaryColor: .pink
                     )
@@ -55,11 +57,17 @@ struct NetworkCardView: View {
                     HStack {
                         MetricValueRow(
                             label: "本次下载",
-                            value: MetricFormatter.bytes(snapshot.sessionDownloadedBytes)
+                            value: MetricFormatter.bytes(
+                                snapshot.sessionDownloadedBytes,
+                                unitSystem: unitSystem
+                            )
                         )
                         MetricValueRow(
                             label: "本次上传",
-                            value: MetricFormatter.bytes(snapshot.sessionUploadedBytes)
+                            value: MetricFormatter.bytes(
+                                snapshot.sessionUploadedBytes,
+                                unitSystem: unitSystem
+                            )
                         )
                     }
 
@@ -89,7 +97,7 @@ struct NetworkCardView: View {
             Label(title, systemImage: symbol)
                 .font(.caption)
                 .foregroundStyle(color)
-            Text(value.map { MetricFormatter.bytesPerSecond($0) } ?? "—")
+            Text(value.map { MetricFormatter.bytesPerSecond($0, unitSystem: unitSystem) } ?? "—")
                 .font(.system(size: 18, weight: .semibold, design: .rounded))
                 .monospacedDigit()
         }

@@ -15,7 +15,13 @@ let package = Package(
         .target(
             name: "PulseBarCore",
             path: "PulseBar",
-            exclude: ["App", "Features", "Resources", "Shared/AppActions.swift"],
+            exclude: [
+                "App",
+                "Features",
+                "Resources",
+                "Shared/AppActions.swift",
+                "Shared/Settings/UnitSystemEnvironment.swift"
+            ],
             sources: ["Monitoring", "Platform", "Shared"],
             linkerSettings: [
                 .linkedFramework("IOKit"),

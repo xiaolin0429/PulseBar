@@ -3,6 +3,7 @@ import SwiftUI
 
 struct DashboardView: View {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.locale) private var locale
 
     var body: some View {
         VStack(spacing: 0) {
@@ -45,7 +46,10 @@ struct DashboardView: View {
     }
 
     private var header: some View {
-        HStack(spacing: 10) {
+        let monitoringAction = model.monitoringState == .paused
+            ? String(localized: "继续监控", locale: locale)
+            : String(localized: "暂停监控", locale: locale)
+        return HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(Host.current().localizedName ?? "Mac")
                     .font(.headline)
@@ -72,8 +76,8 @@ struct DashboardView: View {
                     .frame(width: 16, height: 16)
             }
             .buttonStyle(.borderless)
-            .help(model.monitoringState == .paused ? "继续监控" : "暂停监控")
-            .accessibilityLabel(model.monitoringState == .paused ? "继续监控" : "暂停监控")
+            .help(monitoringAction)
+            .accessibilityLabel(monitoringAction)
 
             Button {
                 AppActions.openSettings()
@@ -129,8 +133,12 @@ struct DashboardView: View {
         let days = seconds / 86_400
         let hours = (seconds % 86_400) / 3_600
         let minutes = (seconds % 3_600) / 60
-        if days > 0 { return "\(days)天 \(hours)小时" }
-        if hours > 0 { return "\(hours)小时 \(minutes)分" }
-        return "\(minutes)分钟"
+        if days > 0 {
+            return String(localized: "\(days)天 \(hours)小时", locale: locale)
+        }
+        if hours > 0 {
+            return String(localized: "\(hours)小时 \(minutes)分", locale: locale)
+        }
+        return String(localized: "\(minutes)分钟", locale: locale)
     }
 }

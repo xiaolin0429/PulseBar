@@ -1,16 +1,29 @@
+import AppKit
 import Foundation
 
 @MainActor
 final class AppModel: ObservableObject {
-    @Published var isMenuBarItemInserted = true
+    @Published private(set) var isMenuBarItemInserted: Bool {
+        didSet {
+            settingsRepository.menuBarWasRemoved = !isMenuBarItemInserted
+        }
+    }
     @Published private(set) var menuBarSummary = MenuBarSummary.unavailable
-    @Published var menuBarPreferences = MenuBarPreferences()
+    @Published var settings: AppSettings {
+        didSet { settingsDidChange() }
+    }
     @Published private(set) var monitoringState: MonitoringState = .monitoring
     @Published private(set) var latest: SystemSnapshot?
     @Published private(set) var history = DashboardHistory.empty
+    @Published private(set) var loginItemStatus: LoginItemStatus
+    @Published var systemIntegrationError: String?
+    @Published private(set) var shouldShowRecoveryNotice: Bool
 
     private let coordinator: SamplingCoordinator
+    private let settingsRepository: SettingsRepository
+    private let loginItemService: any LoginItemServicing
     private var hasStarted = false
+    private var onboardingWindowRequested = false
 
     enum MonitoringState: Equatable {
         case monitoring
@@ -18,16 +31,66 @@ final class AppModel: ObservableObject {
         case partiallyUnavailable
     }
 
-    init(coordinator: SamplingCoordinator = SamplingCoordinator()) {
+    init(
+        coordinator: SamplingCoordinator = SamplingCoordinator(),
+        settingsRepository: SettingsRepository = SettingsRepository(),
+        loginItemService: any LoginItemServicing = LoginItemService()
+    ) {
         self.coordinator = coordinator
+        self.settingsRepository = settingsRepository
+        self.loginItemService = loginItemService
+        let currentLoginItemStatus = loginItemService.status
+        var loadedSettings = settingsRepository.load()
+        loadedSettings.launchAtLogin = Self.isLoginItemEnabled(currentLoginItemStatus)
+        settings = loadedSettings
+        loginItemStatus = currentLoginItemStatus
+        shouldShowRecoveryNotice = settingsRepository.menuBarWasRemoved
+        isMenuBarItemInserted = true
+        settingsRepository.save(loadedSettings)
+        applyAppearanceSettings()
+    }
+
+    var menuBarPreferences: MenuBarPreferences {
+        MenuBarPreferences(settings: settings)
+    }
+
+    var needsOnboarding: Bool {
+        !settingsRepository.onboardingCompleted && !onboardingWindowRequested
     }
 
     func startMonitoring() async {
         guard !hasStarted else { return }
         hasStarted = true
+        await coordinator.setRefreshPolicy(settings.refreshPolicy)
+        await coordinator.setHistoryWindow(settings.historyWindow)
         await coordinator.start { [weak self] snapshot, history in
             self?.publish(snapshot: snapshot, history: history)
         }
+    }
+
+    func markOnboardingWindowRequested() {
+        onboardingWindowRequested = true
+    }
+
+    func setMenuBarItemInserted(_ inserted: Bool) {
+        guard isMenuBarItemInserted != inserted else { return }
+        isMenuBarItemInserted = inserted
+    }
+
+    func completeOnboarding() {
+        settingsRepository.onboardingCompleted = true
+        onboardingWindowRequested = true
+    }
+
+    func dismissRecoveryNotice() {
+        shouldShowRecoveryNotice = false
+        settingsRepository.menuBarWasRemoved = false
+    }
+
+    func restoreMenuBarItem() {
+        isMenuBarItemInserted = true
+        shouldShowRecoveryNotice = true
+        AppDelegate.shared?.showRecoveryWindow()
     }
 
     func togglePaused() {
@@ -58,12 +121,105 @@ final class AppModel: ObservableObject {
         Task { await coordinator.volumeConfigurationChanged() }
     }
 
+    func toggleModule(_ module: MenuBarModule, visible: Bool) {
+        if visible {
+            guard !settings.visibleModules.contains(module) else { return }
+            settings.visibleModules.append(module)
+        } else {
+            guard settings.visibleModules.count > 1 else {
+                systemIntegrationError = String(
+                    localized: "至少保留一个菜单栏模块。",
+                    locale: localizationLocale
+                )
+                return
+            }
+            settings.visibleModules.removeAll { $0 == module }
+        }
+    }
+
+    func moveModule(_ module: MenuBarModule, offset: Int) {
+        guard let index = settings.visibleModules.firstIndex(of: module) else { return }
+        let destination = index + offset
+        guard settings.visibleModules.indices.contains(destination) else { return }
+        settings.visibleModules.swapAt(index, destination)
+    }
+
+    func setLaunchAtLogin(_ enabled: Bool) {
+        do {
+            try loginItemService.setEnabled(enabled)
+            loginItemStatus = loginItemService.status
+            settings.launchAtLogin = Self.isLoginItemEnabled(loginItemStatus)
+            systemIntegrationError = nil
+            if loginItemStatus == .requiresApproval {
+                systemIntegrationError = String(
+                    localized: "登录项需要在系统设置 > 通用 > 登录项中批准。",
+                    locale: localizationLocale
+                )
+            }
+        } catch {
+            loginItemStatus = loginItemService.status
+            systemIntegrationError = String(
+                localized: "无法更改登录启动：\(error.localizedDescription)",
+                locale: localizationLocale
+            )
+        }
+    }
+
+    func openLoginItemSettings() {
+        loginItemService.openSystemSettings()
+    }
+
+    func resetSettings() {
+        var defaultSettings = settingsRepository.resetSettings()
+        if Self.isLoginItemEnabled(loginItemService.status) {
+            do {
+                try loginItemService.setEnabled(false)
+                systemIntegrationError = nil
+            } catch {
+                systemIntegrationError = String(
+                    localized: "无法关闭登录启动：\(error.localizedDescription)",
+                    locale: localizationLocale
+                )
+            }
+        }
+        loginItemStatus = loginItemService.status
+        defaultSettings.launchAtLogin = Self.isLoginItemEnabled(loginItemStatus)
+        settings = defaultSettings
+    }
+
+    private func settingsDidChange() {
+        let normalized = settings.normalized()
+        if normalized != settings {
+            settings = normalized
+            return
+        }
+        settingsRepository.save(settings)
+        applyAppearanceSettings()
+        Task {
+            await coordinator.setRefreshPolicy(settings.refreshPolicy)
+            await coordinator.setHistoryWindow(settings.historyWindow)
+        }
+    }
+
+    private func applyAppearanceSettings() {
+        NSApplication.shared.setActivationPolicy(settings.showDockIcon ? .regular : .accessory)
+    }
+
+    private var localizationLocale: Locale {
+        settings.language.locale ?? .current
+    }
+
+    private static func isLoginItemEnabled(_ status: LoginItemStatus) -> Bool {
+        status == .enabled || status == .requiresApproval
+    }
+
     private func publish(snapshot: SystemSnapshot, history: DashboardHistory) {
         latest = snapshot
         if history != .empty {
             self.history = history
         }
         menuBarSummary = MenuBarSummary(snapshot: snapshot)
+        guard monitoringState != .paused else { return }
         let hasFailure = [
             isUnavailable(snapshot.cpu),
             isUnavailable(snapshot.memory),

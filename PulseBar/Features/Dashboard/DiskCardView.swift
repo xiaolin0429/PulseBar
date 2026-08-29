@@ -6,6 +6,8 @@ struct DiskCardView: View {
     let writeHistory: [HistoryPoint]
     @State private var volumesExpanded = false
     @State private var explanationExpanded = false
+    @Environment(\.unitSystem) private var unitSystem
+    @Environment(\.locale) private var locale
 
     var body: some View {
         MetricCardView(title: "磁盘", systemImage: "internaldrive", tint: .orange) {
@@ -14,7 +16,7 @@ struct DiskCardView: View {
                     if let volume = snapshot.primaryVolume {
                         HStack(alignment: .firstTextBaseline) {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(MetricFormatter.bytes(volume.availableCapacityBytes))
+                                Text(bytes(volume.availableCapacityBytes))
                                     .font(.system(size: 26, weight: .semibold, design: .rounded))
                                     .monospacedDigit()
                                 Text("可用 · \(volume.name)")
@@ -60,8 +62,8 @@ struct DiskCardView: View {
                     ThroughputTrendChart(
                         primary: readHistory,
                         secondary: writeHistory,
-                        primaryName: "读取",
-                        secondaryName: "写入",
+                        primaryName: String(localized: "读取", locale: locale),
+                        secondaryName: String(localized: "写入", locale: locale),
                         primaryColor: .cyan,
                         secondaryColor: .orange
                     )
@@ -80,7 +82,7 @@ struct DiskCardView: View {
                                             .lineLimit(1)
                                     }
                                     Spacer()
-                                    Text(MetricFormatter.bytes(volume.availableCapacityBytes))
+                                    Text(bytes(volume.availableCapacityBytes))
                                         .font(.caption)
                                         .monospacedDigit()
                                 }
@@ -121,7 +123,7 @@ struct DiskCardView: View {
                 Text(title)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
-                Text(value.map { MetricFormatter.bytesPerSecond($0) } ?? "—")
+                Text(value.map { MetricFormatter.bytesPerSecond($0, unitSystem: unitSystem) } ?? "—")
                     .font(.caption.weight(.medium))
                     .monospacedDigit()
             }
@@ -130,5 +132,9 @@ struct DiskCardView: View {
 
     private func percent(_ ratio: Double) -> String {
         "\(Int((ratio * 100).rounded()))%"
+    }
+
+    private func bytes(_ value: UInt64) -> String {
+        MetricFormatter.bytes(value, unitSystem: unitSystem)
     }
 }

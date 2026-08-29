@@ -1,8 +1,8 @@
 import Foundation
 
 struct MenuBarSummary: Equatable, Sendable {
-    var cpuPercent: Int?
-    var memoryPercent: Int?
+    var cpuPercent: Double?
+    var memoryPercent: Double?
     var diskFreeBytes: UInt64?
     var downloadBytesPerSecond: Double?
     var uploadBytesPerSecond: Double?
@@ -15,8 +15,8 @@ struct MenuBarSummary: Equatable, Sendable {
     }
 
     init(
-        cpuPercent: Int?,
-        memoryPercent: Int?,
+        cpuPercent: Double?,
+        memoryPercent: Double?,
         diskFreeBytes: UInt64?,
         downloadBytesPerSecond: Double?,
         uploadBytesPerSecond: Double?,
@@ -53,8 +53,8 @@ struct MenuBarSummary: Equatable, Sendable {
         let memory = snapshot.memory.availableValue
         let disk = snapshot.disk.availableValue?.primaryVolume
         let network = snapshot.network.availableValue
-        cpuPercent = cpu.map { Int(($0.totalUsageRatio * 100).rounded()) }
-        memoryPercent = memory.map { Int(($0.usageRatio * 100).rounded()) }
+        cpuPercent = cpu.map { $0.totalUsageRatio * 100 }
+        memoryPercent = memory.map { $0.usageRatio * 100 }
         diskFreeBytes = disk?.availableCapacityBytes
         downloadBytesPerSecond = network?.downloadBytesPerSecond
         uploadBytesPerSecond = network?.uploadBytesPerSecond

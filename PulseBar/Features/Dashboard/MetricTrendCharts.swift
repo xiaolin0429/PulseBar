@@ -5,6 +5,7 @@ struct PercentTrendChart: View {
     let points: [HistoryPoint]
     let color: Color
     let accessibilityName: LocalizedStringKey
+    @Environment(\.locale) private var locale
 
     var body: some View {
         Chart(points) { point in
@@ -47,8 +48,13 @@ struct PercentTrendChart: View {
     }
 
     private func chartAccessibilityValue(_ points: [HistoryPoint]) -> String {
-        guard let latest = points.last else { return "暂无历史数据" }
-        return "最近值 \(Int((latest.value * 100).rounded()))%"
+        guard let latest = points.last else {
+            return String(localized: "暂无历史数据", locale: locale)
+        }
+        return String(
+            localized: "最近值 \(Int((latest.value * 100).rounded()))%",
+            locale: locale
+        )
     }
 }
 
@@ -59,6 +65,8 @@ struct ThroughputTrendChart: View {
     let secondaryName: String
     let primaryColor: Color
     let secondaryColor: Color
+    @Environment(\.unitSystem) private var unitSystem
+    @Environment(\.locale) private var locale
 
     var body: some View {
         Chart(series) { point in
@@ -102,9 +110,16 @@ struct ThroughputTrendChart: View {
     }
 
     private var accessibilityValue: String {
-        let first = primary.last.map { MetricFormatter.bytesPerSecond($0.value) } ?? "暂无数据"
-        let second = secondary.last.map { MetricFormatter.bytesPerSecond($0.value) } ?? "暂无数据"
-        return "\(primaryName) \(first)，\(secondaryName) \(second)"
+        let first = primary.last.map {
+            MetricFormatter.bytesPerSecond($0.value, unitSystem: unitSystem)
+        } ?? String(localized: "暂无数据", locale: locale)
+        let second = secondary.last.map {
+            MetricFormatter.bytesPerSecond($0.value, unitSystem: unitSystem)
+        } ?? String(localized: "暂无数据", locale: locale)
+        return String(
+            localized: "\(primaryName) \(first)，\(secondaryName) \(second)",
+            locale: locale
+        )
     }
 
     private func shortRate(_ value: Double) -> String {

@@ -3,6 +3,7 @@ import SwiftUI
 struct MenuBarLabelView: View {
     let summary: MenuBarSummary
     let preferences: MenuBarPreferences
+    @Environment(\.locale) private var locale
 
     var body: some View {
         Text(label)
@@ -26,36 +27,47 @@ struct MenuBarLabelView: View {
     private func label(for module: MenuBarModule) -> String? {
         switch module {
         case .cpu:
-            let value = summary.cpuPercent.map { "\($0)%" } ?? "—"
+            let value = summary.cpuPercent.map(percent) ?? "—"
             return preferences.preset == .compact ? value : "CPU \(value)"
         case .memory:
-            let value = summary.memoryPercent.map { "\($0)%" } ?? "—"
+            let value = summary.memoryPercent.map(percent) ?? "—"
             return preferences.preset == .compact ? value : "MEM \(value)"
         case .disk:
             guard preferences.preset == .complete else { return nil }
-            let value = summary.diskFreeBytes.map { MetricFormatter.bytes($0) } ?? "—"
+            let value = summary.diskFreeBytes.map {
+                MetricFormatter.bytes($0, unitSystem: preferences.unitSystem)
+            } ?? "—"
             return "SSD \(value)"
         case .network:
             let download = summary.downloadBytesPerSecond.map {
-                MetricFormatter.bytesPerSecond($0)
+                MetricFormatter.bytesPerSecond($0, unitSystem: preferences.unitSystem)
             } ?? "—"
             let upload = summary.uploadBytesPerSecond.map {
-                MetricFormatter.bytesPerSecond($0)
+                MetricFormatter.bytesPerSecond($0, unitSystem: preferences.unitSystem)
             } ?? "—"
             return preferences.preset == .compact ? "↓\(download)" : "↓ \(download)  ↑ \(upload)"
         }
     }
 
     private var accessibilityLabel: String {
-        let cpu = summary.cpuPercent.map(String.init) ?? "不可用"
-        let memory = summary.memoryPercent.map(String.init) ?? "不可用"
+        let unavailable = String(localized: "不可用", locale: locale)
+        let cpu = summary.cpuPercent.map(percent) ?? unavailable
+        let memory = summary.memoryPercent.map(percent) ?? unavailable
         let download = summary.downloadBytesPerSecond.map {
-            MetricFormatter.bytesPerSecond($0)
-        } ?? "不可用"
+            MetricFormatter.bytesPerSecond($0, unitSystem: preferences.unitSystem)
+        } ?? unavailable
         let upload = summary.uploadBytesPerSecond.map {
-            MetricFormatter.bytesPerSecond($0)
-        } ?? "不可用"
-        return "CPU \(cpu)%，内存 \(memory)%，下载 \(download)，上传 \(upload)"
+            MetricFormatter.bytesPerSecond($0, unitSystem: preferences.unitSystem)
+        } ?? unavailable
+        return String(
+            localized: "CPU \(cpu)，内存 \(memory)，下载 \(download)，上传 \(upload)",
+            locale: locale
+        )
+    }
+
+    private func percent(_ value: Double) -> String {
+        let digits = preferences.showDecimals ? 1 : 0
+        return "\(value.formatted(.number.precision(.fractionLength(digits))))%"
     }
 
     private var color: Color {

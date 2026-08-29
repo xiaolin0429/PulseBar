@@ -54,7 +54,7 @@ struct MetricStateView<Value: Sendable & Equatable, Content: View>: View {
             VStack(alignment: .leading, spacing: 4) {
                 Label("暂时无法读取", systemImage: "exclamationmark.triangle")
                     .foregroundStyle(.secondary)
-                Text(failure.userMessageKey)
+                Text(LocalizedStringKey(failure.userMessageKey))
                     .font(.caption)
                     .foregroundStyle(.tertiary)
             }
@@ -78,5 +78,6 @@ struct MetricValueRow: View {
                 .monospacedDigit()
         }
         .font(.caption)
+        .frame(maxWidth: .infinity)
     }
 }

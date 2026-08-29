@@ -5,6 +5,8 @@ struct MemoryCardView: View {
     let history: [HistoryPoint]
     @State private var detailsExpanded = false
     @State private var explanationExpanded = false
+    @Environment(\.unitSystem) private var unitSystem
+    @Environment(\.locale) private var locale
 
     var body: some View {
         MetricCardView(title: "内存", systemImage: "memorychip", tint: .purple) {
@@ -15,8 +17,8 @@ struct MemoryCardView: View {
                             .font(.system(size: 30, weight: .semibold, design: .rounded))
                             .monospacedDigit()
                         Text(
-                            "\(MetricFormatter.bytes(snapshot.usedApproximationBytes)) / " +
-                            MetricFormatter.bytes(snapshot.physicalTotalBytes)
+                            "\(bytes(snapshot.usedApproximationBytes)) / " +
+                            bytes(snapshot.physicalTotalBytes)
                         )
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -34,13 +36,13 @@ struct MemoryCardView: View {
                         VStack(spacing: 6) {
                             MetricValueRow(
                                 label: "可用",
-                                value: MetricFormatter.bytes(snapshot.availableApproximationBytes)
+                                value: bytes(snapshot.availableApproximationBytes)
                             )
-                            MetricValueRow(label: "活跃", value: MetricFormatter.bytes(snapshot.activeBytes))
-                            MetricValueRow(label: "非活跃", value: MetricFormatter.bytes(snapshot.inactiveBytes))
-                            MetricValueRow(label: "联动", value: MetricFormatter.bytes(snapshot.wiredBytes))
-                            MetricValueRow(label: "压缩", value: MetricFormatter.bytes(snapshot.compressedBytes))
-                            MetricValueRow(label: "可清除", value: MetricFormatter.bytes(snapshot.purgeableBytes))
+                            MetricValueRow(label: "活跃", value: bytes(snapshot.activeBytes))
+                            MetricValueRow(label: "非活跃", value: bytes(snapshot.inactiveBytes))
+                            MetricValueRow(label: "联动", value: bytes(snapshot.wiredBytes))
+                            MetricValueRow(label: "压缩", value: bytes(snapshot.compressedBytes))
+                            MetricValueRow(label: "可清除", value: bytes(snapshot.purgeableBytes))
                             MetricValueRow(
                                 label: "交换空间",
                                 value: swapDescription(snapshot)
@@ -82,9 +84,13 @@ struct MemoryCardView: View {
 
     private func swapDescription(_ snapshot: MemorySnapshot) -> String {
         guard let used = snapshot.swapUsedBytes, let total = snapshot.swapTotalBytes else {
-            return "不可用"
+            return String(localized: "不可用", locale: locale)
         }
-        return "\(MetricFormatter.bytes(used)) / \(MetricFormatter.bytes(total))"
+        return "\(bytes(used)) / \(bytes(total))"
+    }
+
+    private func bytes(_ value: UInt64) -> String {
+        MetricFormatter.bytes(value, unitSystem: unitSystem)
     }
 }
 

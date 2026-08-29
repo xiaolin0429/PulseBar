@@ -1,55 +1,38 @@
-import AppKit
 import SwiftUI
 
 @main
+@MainActor
 struct PulseBarApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    @StateObject private var model = AppModel()
+    @StateObject private var model: AppModel
+
+    init() {
+        let appModel = AppModel()
+        _model = StateObject(wrappedValue: appModel)
+        AppDelegate.model = appModel
+    }
 
     var body: some Scene {
-        MenuBarExtra(isInserted: $model.isMenuBarItemInserted) {
+        MenuBarExtra(
+            isInserted: Binding(
+                get: { model.isMenuBarItemInserted },
+                set: { model.setMenuBarItemInserted($0) }
+            )
+        ) {
             DashboardView()
                 .environmentObject(model)
+                .environment(\.unitSystem, model.settings.unitSystem)
+                .environment(\.locale, model.settings.language.locale ?? .current)
         } label: {
-            MenuBarLabelView(
-                summary: model.menuBarSummary,
-                preferences: model.menuBarPreferences
-            )
-            .task { await model.startMonitoring() }
-            .onReceive(
-                NSWorkspace.shared.notificationCenter.publisher(
-                    for: NSWorkspace.willSleepNotification
-                )
-            ) { _ in
-                model.prepareForSleep()
-            }
-            .onReceive(
-                NSWorkspace.shared.notificationCenter.publisher(
-                    for: NSWorkspace.didWakeNotification
-                )
-            ) { _ in
-                model.resumeAfterWake()
-            }
-            .onReceive(
-                NSWorkspace.shared.notificationCenter.publisher(
-                    for: NSWorkspace.didMountNotification
-                )
-            ) { _ in
-                model.volumeConfigurationChanged()
-            }
-            .onReceive(
-                NSWorkspace.shared.notificationCenter.publisher(
-                    for: NSWorkspace.didUnmountNotification
-                )
-            ) { _ in
-                model.volumeConfigurationChanged()
-            }
+            AppMenuBarLabel(model: model)
         }
         .menuBarExtraStyle(.window)
 
         Settings {
             SettingsView()
                 .environmentObject(model)
+                .environment(\.unitSystem, model.settings.unitSystem)
+                .environment(\.locale, model.settings.language.locale ?? .current)
         }
     }
 }
