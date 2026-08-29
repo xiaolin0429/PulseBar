@@ -1,0 +1,3 @@
+#include "Release-AppStore.xcconfig"
+
+ENABLE_HARDENED_RUNTIME = YES
