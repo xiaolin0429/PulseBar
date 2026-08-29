@@ -19,6 +19,7 @@ let package = Package(
             sources: ["Monitoring", "Platform", "Shared"],
             linkerSettings: [
                 .linkedFramework("IOKit"),
+                .linkedFramework("Network"),
                 .linkedFramework("SystemConfiguration")
             ]
         ),

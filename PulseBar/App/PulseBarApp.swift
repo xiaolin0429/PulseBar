@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 @main
@@ -14,6 +15,35 @@ struct PulseBarApp: App {
                 summary: model.menuBarSummary,
                 preferences: model.menuBarPreferences
             )
+            .task { await model.startMonitoring() }
+            .onReceive(
+                NSWorkspace.shared.notificationCenter.publisher(
+                    for: NSWorkspace.willSleepNotification
+                )
+            ) { _ in
+                model.prepareForSleep()
+            }
+            .onReceive(
+                NSWorkspace.shared.notificationCenter.publisher(
+                    for: NSWorkspace.didWakeNotification
+                )
+            ) { _ in
+                model.resumeAfterWake()
+            }
+            .onReceive(
+                NSWorkspace.shared.notificationCenter.publisher(
+                    for: NSWorkspace.didMountNotification
+                )
+            ) { _ in
+                model.volumeConfigurationChanged()
+            }
+            .onReceive(
+                NSWorkspace.shared.notificationCenter.publisher(
+                    for: NSWorkspace.didUnmountNotification
+                )
+            ) { _ in
+                model.volumeConfigurationChanged()
+            }
         }
         .menuBarExtraStyle(.window)
 

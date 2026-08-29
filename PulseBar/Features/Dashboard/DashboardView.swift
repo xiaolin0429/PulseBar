@@ -23,14 +23,48 @@ struct DashboardView: View {
                 .help(model.monitoringState == .paused ? "继续监控" : "暂停监控")
             }
 
-            GroupBox("项目骨架") {
-                VStack(alignment: .leading, spacing: 8) {
-                    Label("单一 MenuBarExtra", systemImage: "menubar.rectangle")
-                    Label("AppModel 单向状态发布", systemImage: "arrow.triangle.2.circlepath")
-                    Label("系统采集将在下一里程碑接入", systemImage: "wrench.and.screwdriver")
+            GroupBox("实时采集") {
+                if let snapshot = model.latest {
+                    Grid(alignment: .leading, horizontalSpacing: 20, verticalSpacing: 8) {
+                        GridRow {
+                            Label("CPU", systemImage: "cpu")
+                            Text(percent(snapshot.cpu.availableValue?.totalUsageRatio))
+                                .monospacedDigit()
+                        }
+                        GridRow {
+                            Label("内存", systemImage: "memorychip")
+                            Text(percent(snapshot.memory.availableValue?.usageRatio))
+                                .monospacedDigit()
+                        }
+                        GridRow {
+                            Label("磁盘可用", systemImage: "internaldrive")
+                            Text(
+                                snapshot.disk.availableValue?.primaryVolume
+                                    .map { MetricFormatter.bytes($0.availableCapacityBytes) } ?? "—"
+                            )
+                            .monospacedDigit()
+                        }
+                        GridRow {
+                            Label("网络", systemImage: "network")
+                            Text(
+                                snapshot.network.availableValue?.downloadBytesPerSecond
+                                    .map { "↓ \(MetricFormatter.bytesPerSecond($0))" } ?? "—"
+                            )
+                            .monospacedDigit()
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 4)
+                } else {
+                    HStack {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text("正在建立采样基线…")
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 4)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.vertical, 4)
             }
 
             Divider()
@@ -50,14 +84,19 @@ struct DashboardView: View {
         }
         .padding(16)
         .frame(width: 400)
+        .onAppear { model.setDashboardVisible(true) }
+        .onDisappear { model.setDashboardVisible(false) }
     }
 
     private var statusText: String {
         switch model.monitoringState {
-        case .preview: "预览数据 · 框架验证"
         case .monitoring: "监控中"
         case .paused: "已暂停"
         case .partiallyUnavailable: "部分指标不可用"
         }
+    }
+
+    private func percent(_ ratio: Double?) -> String {
+        ratio.map { "\(Int(($0 * 100).rounded()))%" } ?? "—"
     }
 }
