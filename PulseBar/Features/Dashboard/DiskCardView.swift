@@ -8,6 +8,7 @@ struct DiskCardView: View {
     @State private var explanationExpanded = false
     @Environment(\.unitSystem) private var unitSystem
     @Environment(\.locale) private var locale
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         MetricCardView(title: "磁盘", systemImage: "internaldrive", tint: .orange) {
@@ -68,7 +69,12 @@ struct DiskCardView: View {
                         secondaryColor: .orange
                     )
 
-                    DisclosureGroup(isExpanded: $volumesExpanded) {
+                    DisclosureGroup(
+                        isExpanded: DashboardMotion.expansionBinding(
+                            $volumesExpanded,
+                            reduceMotion: reduceMotion
+                        )
+                    ) {
                         VStack(spacing: 6) {
                             ForEach(snapshot.volumes) { volume in
                                 HStack {
@@ -94,7 +100,12 @@ struct DiskCardView: View {
                             .font(.caption)
                     }
 
-                    DisclosureGroup(isExpanded: $explanationExpanded) {
+                    DisclosureGroup(
+                        isExpanded: DashboardMotion.expansionBinding(
+                            $explanationExpanded,
+                            reduceMotion: reduceMotion
+                        )
+                    ) {
                         Text(
                             "容量优先使用系统提供的“可用于重要用途”数值；APFS 快照和可清除空间可能令其与 Finder 略有差异。读写速率来自块存储累计计数器。"
                         )

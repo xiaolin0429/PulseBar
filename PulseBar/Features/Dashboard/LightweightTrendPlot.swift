@@ -32,9 +32,6 @@ struct LightweightTrendPlot: View {
                 }
             }
         }
-        .transaction { transaction in
-            transaction.animation = nil
-        }
     }
 }
 

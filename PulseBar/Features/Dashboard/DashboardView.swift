@@ -11,7 +11,7 @@ struct DashboardView: View {
             Divider()
             ScrollView {
                 if let snapshot = model.latest {
-                    LazyVStack(spacing: 12) {
+                    VStack(spacing: 12) {
                         CPUCardView(metric: snapshot.cpu, history: model.history.cpuUsage)
                         MemoryCardView(metric: snapshot.memory, history: model.history.memoryUsage)
                         DiskCardView(

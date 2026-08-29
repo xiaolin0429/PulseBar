@@ -4,6 +4,7 @@ struct CPUCardView: View {
     let metric: MetricValue<CPUSnapshot>
     let history: [HistoryPoint]
     @State private var coresExpanded = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         MetricCardView(title: "CPU", systemImage: "cpu", tint: .blue) {
@@ -25,7 +26,12 @@ struct CPUCardView: View {
 
                     PercentTrendChart(points: history, color: .blue, accessibilityName: "CPU 使用率趋势")
 
-                    DisclosureGroup(isExpanded: $coresExpanded) {
+                    DisclosureGroup(
+                        isExpanded: DashboardMotion.expansionBinding(
+                            $coresExpanded,
+                            reduceMotion: reduceMotion
+                        )
+                    ) {
                         LazyVGrid(
                             columns: [GridItem(.adaptive(minimum: 74), spacing: 8)],
                             spacing: 8

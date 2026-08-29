@@ -7,6 +7,7 @@ struct MemoryCardView: View {
     @State private var explanationExpanded = false
     @Environment(\.unitSystem) private var unitSystem
     @Environment(\.locale) private var locale
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         MetricCardView(title: "内存", systemImage: "memorychip", tint: .purple) {
@@ -32,7 +33,12 @@ struct MemoryCardView: View {
 
                     PercentTrendChart(points: history, color: .purple, accessibilityName: "内存占用趋势")
 
-                    DisclosureGroup(isExpanded: $detailsExpanded) {
+                    DisclosureGroup(
+                        isExpanded: DashboardMotion.expansionBinding(
+                            $detailsExpanded,
+                            reduceMotion: reduceMotion
+                        )
+                    ) {
                         VStack(spacing: 6) {
                             MetricValueRow(
                                 label: "可用",
@@ -54,7 +60,12 @@ struct MemoryCardView: View {
                             .font(.caption)
                     }
 
-                    DisclosureGroup(isExpanded: $explanationExpanded) {
+                    DisclosureGroup(
+                        isExpanded: DashboardMotion.expansionBinding(
+                            $explanationExpanded,
+                            reduceMotion: reduceMotion
+                        )
+                    ) {
                         Text(
                             "macOS 会将空闲内存用于缓存，空闲较少不一定异常。PulseBar 的占用值由公开 VM 计数器近似计算；内存压力、压缩与交换空间通常更能反映系统是否紧张。"
                         )

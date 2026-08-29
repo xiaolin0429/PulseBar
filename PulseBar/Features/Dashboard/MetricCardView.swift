@@ -1,5 +1,23 @@
 import SwiftUI
 
+enum DashboardMotion {
+    static let disclosure = Animation.easeInOut(duration: 0.22)
+
+    static func expansionBinding(
+        _ binding: Binding<Bool>,
+        reduceMotion: Bool
+    ) -> Binding<Bool> {
+        Binding(
+            get: { binding.wrappedValue },
+            set: { isExpanded in
+                withAnimation(reduceMotion ? nil : disclosure) {
+                    binding.wrappedValue = isExpanded
+                }
+            }
+        )
+    }
+}
+
 struct MetricCardView<Content: View>: View {
     let title: LocalizedStringKey
     let systemImage: String

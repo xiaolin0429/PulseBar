@@ -7,6 +7,7 @@ struct NetworkCardView: View {
     @State private var explanationExpanded = false
     @Environment(\.unitSystem) private var unitSystem
     @Environment(\.locale) private var locale
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         MetricCardView(title: "网络", systemImage: "network", tint: .teal) {
@@ -71,7 +72,12 @@ struct NetworkCardView: View {
                         )
                     }
 
-                    DisclosureGroup(isExpanded: $explanationExpanded) {
+                    DisclosureGroup(
+                        isExpanded: DashboardMotion.expansionBinding(
+                            $explanationExpanded,
+                            reduceMotion: reduceMotion
+                        )
+                    ) {
                         Text(
                             "自动模式仅统计系统当前主接口，切换 Wi‑Fi、以太网或 VPN 时会重建基线。本次累计量只包含 PulseBar 运行期间观察到的有效差值，不是开机总流量。"
                         )
