@@ -11,7 +11,7 @@
 
 ## 已通过
 
-- `swift test`：24 项测试通过，0 失败。
+- `swift test`：28 项测试通过，0 失败。
 - `Scripts/verify-release.sh`：完整自动化门禁通过。
 - Debug、Release-AppStore、Release-Direct arm64 构建通过。
 - Release-AppStore x86_64 交叉编译通过；此结果仅证明编译，不等同 Intel 实机运行验收。
@@ -31,22 +31,38 @@
 | CPU raw | 0.01 ms | 3 ms | PASS |
 | Memory raw | 0.00 ms | 3 ms | PASS |
 | Network counters | 0.01 ms | 3 ms | PASS |
-| Disk I/O counters | 0.05 ms | 8 ms | PASS |
-| Volume capacity（低频） | 6.70 ms | 20 ms | PASS |
+| Disk I/O counters | 0.04 ms | 8 ms | PASS |
+| Volume capacity（低频） | 6.28 ms | 20 ms | PASS |
 
 采样协调器并发执行四类采集；面板关闭时不物化图表数组，也不向 SwiftUI 发布完整快照。
 
-## 短时长稳脚本自检
+## 趋势图内存优化
 
-20 秒、2 秒采样间隔、Release-AppStore 构建：
+真机复测发现 Swift Charts 场景会将 physical footprint 从约 17 MB 提升至 134–140 MB，超过 60 MB 产品预算。当前实现改为：
 
-- 10 个样本；
-- physical footprint：首尾均 17,280 KB，峰值 17,280 KB；
-- 观察到的 CPU 峰值：0.2%；
+- 移除 `Charts.framework` 动态依赖，使用 SwiftUI `Shape` / `Path` 直接绘制；
+- 每条趋势绘制前压缩到最多 60 点；
+- 按有序样本桶保留局部最小值与最大值，避免丢失瞬时峰谷；
+- 双序列图共享 sequence 范围，避免缺失点导致时间轴错位；
+- 图表仍保留坐标、填充、双序列图例和完整可访问性摘要。
+
+面板保持可见并持续绘制 120 秒：
+
+- physical footprint：首个样本 34,657 KB，末样本 35,665 KB，峰值 35,665 KB；
+- 外部 socket：0；
+- CPU、内存、磁盘、网络单/双序列趋势图均通过真实 UI 与可访问性检查。
+
+## 五分钟稳态门禁
+
+Release-AppStore 构建，30 秒图形预热后测量 300 秒，10 秒采样间隔：
+
+- 30 个样本；
+- physical footprint：首个样本 33,425 KB，末样本 33,793 KB，峰值 33,873 KB，增长 368 KB；
+- 观察到的 CPU 峰值：6.7%；
 - 外部 socket：0；
 - 崩溃：0。
 
-这只验证脚本、测量口径和明显回归，不代表 AC-10 的 8 小时结论。
+长稳脚本先执行 30 秒预热，再计算稳态增长；预热阶段仍持续检查进程存活与外部 socket。该结果通过 60 MB 峰值与 10 MB 稳态增长门禁，但不代表 AC-10 的 8 小时结论。
 
 ## 尚需发布阶段执行
 

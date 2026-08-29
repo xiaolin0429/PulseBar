@@ -4,11 +4,11 @@ PulseBar 是一款原生 macOS 菜单栏系统监控工具。它以单一菜单�
 
 ## 产品边界
 
-- macOS 13+，SwiftUI + Swift Charts。
+- macOS 13+，SwiftUI + 轻量 `Path` 趋势绘制。
 - 使用公开 Mach、BSD、Foundation、IOKit、Network 与 SystemConfiguration API。
 - App Sandbox，无管理员权限、无特权 Helper。
 - 不建立外部网络连接，不含广告、遥测或第三方运行时依赖。
-- 历史数据只保存在固定容量内存缓冲区，退出应用即清除。
+- 历史数据只保存在固定容量内存缓冲区；绘制前按有序样本桶压缩到最多 60 点并保留峰谷，退出应用即清除。
 
 ## 构建与验证
 

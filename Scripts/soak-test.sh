@@ -3,7 +3,7 @@
 set -euo pipefail
 
 if [[ $# -lt 1 ]]; then
-    echo "Usage: Scripts/soak-test.sh <duration-seconds> [sample-interval-seconds] [PulseBar.app]" >&2
+    echo "Usage: Scripts/soak-test.sh <duration-seconds> [sample-interval-seconds] [PulseBar.app] [warmup-seconds]" >&2
     echo "Examples: 28800 for 8 hours, 86400 for 24 hours" >&2
     exit 64
 fi
@@ -12,6 +12,7 @@ project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 duration_seconds="$1"
 sample_interval="${2:-30}"
 provided_app="${3:-}"
+warmup_seconds="${4:-30}"
 work_root="$(mktemp -d /tmp/pulsebar-soak.XXXXXX)"
 samples_file="$work_root/samples.tsv"
 app_log="$work_root/PulseBar.log"
@@ -32,6 +33,10 @@ if ! [[ "$duration_seconds" =~ ^[0-9]+$ ]] || (( duration_seconds < 10 )); then
 fi
 if ! [[ "$sample_interval" =~ ^[0-9]+$ ]] || (( sample_interval < 1 )); then
     echo "Sample interval must be a positive integer" >&2
+    exit 64
+fi
+if ! [[ "$warmup_seconds" =~ ^[0-9]+$ ]]; then
+    echo "Warmup duration must be a non-negative integer" >&2
     exit 64
 fi
 
@@ -61,9 +66,26 @@ if ! kill -0 "$app_pid" 2>/dev/null; then
     exit 1
 fi
 
+network_observed=0
+warmup_deadline=$(($(date +%s) + warmup_seconds))
+while (( $(date +%s) < warmup_deadline )); do
+    if ! kill -0 "$app_pid" 2>/dev/null; then
+        echo "FAIL: PulseBar crashed or exited during warmup" >&2
+        sed -n '1,160p' "$app_log" >&2
+        exit 1
+    fi
+    if lsof -nP -a -p "$app_pid" -i 2>/dev/null | tail -n +2 | grep -q .; then
+        network_observed=1
+    fi
+    now="$(date +%s)"
+    remaining=$((warmup_deadline - now))
+    sleep_for="$sample_interval"
+    if (( remaining < sleep_for )); then sleep_for="$remaining"; fi
+    if (( sleep_for > 0 )); then sleep "$sleep_for"; fi
+done
+
 start_epoch="$(date +%s)"
 deadline=$((start_epoch + duration_seconds))
-network_observed=0
 printf 'elapsed_seconds\tphysical_footprint_kb\tcpu_percent\n' >"$samples_file"
 
 while (( $(date +%s) < deadline )); do
@@ -99,7 +121,7 @@ read -r sample_count first_footprint last_footprint max_footprint footprint_grow
 )"
 
 echo "PulseBar soak result"
-echo "duration: ${duration_seconds}s, samples: $sample_count"
+echo "warmup: ${warmup_seconds}s, duration: ${duration_seconds}s, samples: $sample_count"
 echo "physical footprint: first=${first_footprint}KB, last=${last_footprint}KB, max=${max_footprint}KB, growth=${footprint_growth}KB"
 echo "max observed CPU: ${max_cpu}%"
 echo "external sockets observed: $network_observed"

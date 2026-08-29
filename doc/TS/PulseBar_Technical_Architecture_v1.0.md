@@ -62,7 +62,7 @@ PulseBar 采用“**单进程、模块化采集、统一调度、内存历史、
 
 | ADR | 决策 | 原因 |
 |---|---|---|
-| ADR-001 | 最低 macOS 13 | MenuBarExtra、Swift Charts、SMAppService 在该版本形成统一基线 |
+| ADR-001 | 最低 macOS 13 | MenuBarExtra、SwiftUI Shape/Path、SMAppService 在该版本形成统一基线 |
 | ADR-002 | SwiftUI + 少量 AppKit | SwiftUI 提升界面开发效率；AppKit 处理应用激活、重开和 NSWorkspace 等能力 |
 | ADR-003 | 单一组合 MenuBarExtra | 节省菜单栏空间，降低多状态项管理复杂度 |
 | ADR-004 | 公开 API 优先 | 降低系统升级失效和 App Store 审核风险 |
@@ -82,7 +82,7 @@ PulseBar 采用“**单进程、模块化采集、统一调度、内存历史、
 | 语言 | Swift 6 语言模式 | 严格并发检查、类型安全 |
 | UI | SwiftUI | 菜单栏标签、弹出面板、设置、图表容器 |
 | macOS UI 补充 | AppKit | 应用激活策略、重新打开、NSWorkspace、必要窗口控制 |
-| 图表 | Swift Charts | CPU、内存、磁盘、网络趋势图 |
+| 图表 | SwiftUI Shape/Path | CPU、内存、磁盘、网络趋势图；避免通用图表框架的图形驻留开销 |
 | CPU/内存 | Darwin / Mach | 主机处理器 Tick、虚拟内存统计、页大小 |
 | 内存压力 | Dispatch | 系统内存压力事件 |
 | 磁盘容量 | Foundation | 已挂载卷、总容量、可用容量 |
@@ -809,11 +809,11 @@ struct RingBuffer<Element> {
 
 ### 15.3 降采样
 
-v1.0 最大 300 秒、最多约 300 点，无需复杂算法。若未来支持小时/天：
+历史缓冲仍保留最多 360 点，但 UI 绘制前必须压缩到最多 60 点。按有序样本桶选择局部最小值和最大值，并按原顺序输出，以保留瞬时峰谷且限制 Path 复杂度。若未来支持小时/天：
 
 - UI 前按时间桶做 min/max/average；
 - 长期历史使用 SQLite 聚合；
-- 不将上万点直接交给 Swift Charts。
+- 不将长历史直接交给绘制层。
 
 ---
 
@@ -1140,7 +1140,7 @@ com.example.PulseBar.alerts
 - 固定 Ring Buffer；
 - 菜单栏数字去重；
 - 面板关闭时不发布完整图表；
-- Swift Charts 数据点上限；
+- Shape/Path 绘制点上限 60，按桶保留峰谷；
 - 禁用每秒隐式动画；
 - Formatter 实例复用；
 - 不创建子进程调用 `top`、`vm_stat`、`iostat`、`netstat`；
@@ -1491,7 +1491,7 @@ flowchart LR
 ### Milestone 3：详细面板
 
 - 四张卡片；
-- Swift Charts；
+- SwiftUI Shape/Path 趋势绘制；
 - 数据口径说明；
 - 暂停/继续；
 - 打开活动监视器；
@@ -1584,7 +1584,7 @@ flowchart LR
 ## 32. 参考依据
 
 - Apple Developer Documentation：MenuBarExtra、MenuBarExtraStyle.window、MenuBarExtra 的 `isInserted` 绑定。
-- Apple Developer Documentation：Swift Charts、Settings Scene、NSStatusItem。
+- Apple Developer Documentation：SwiftUI Shape、Path、Settings Scene、NSStatusItem。
 - Apple Developer Documentation：App Sandbox、LSUIElement、SMAppService。
 - Apple Developer Documentation：Mach `processor_cpu_load_info`、虚拟内存统计接口。
 - Apple Developer Documentation：Dispatch Memory Pressure Source。
