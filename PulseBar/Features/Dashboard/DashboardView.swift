@@ -41,6 +41,7 @@ struct DashboardView: View {
         }
         .frame(width: 420)
         .frame(minHeight: 500, idealHeight: 650, maxHeight: 720)
+        .accessibilityIdentifier("dashboard")
         .onAppear { model.setDashboardVisible(true) }
         .onDisappear { model.setDashboardVisible(false) }
     }
@@ -78,6 +79,7 @@ struct DashboardView: View {
             .buttonStyle(.borderless)
             .help(monitoringAction)
             .accessibilityLabel(monitoringAction)
+            .accessibilityIdentifier("dashboard.monitoring.toggle")
 
             Button {
                 AppActions.openSettings()
@@ -88,6 +90,7 @@ struct DashboardView: View {
             .buttonStyle(.borderless)
             .help("打开设置")
             .accessibilityLabel("打开设置")
+            .accessibilityIdentifier("dashboard.settings")
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)

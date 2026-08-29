@@ -8,7 +8,6 @@ public enum MenuBarModule: String, CaseIterable, Codable, Sendable, Identifiable
 
     public var id: String { rawValue }
 }
-
 public enum MenuBarPreset: String, CaseIterable, Codable, Sendable, Identifiable {
     case compact
     case standard
@@ -74,4 +73,3 @@ public struct AppSettings: Codable, Equatable, Sendable {
         return result
     }
 }
-

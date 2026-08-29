@@ -42,4 +42,3 @@ public struct SettingsRepository {
         return defaultsValue
     }
 }
-

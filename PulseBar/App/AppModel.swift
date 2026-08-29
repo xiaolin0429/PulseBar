@@ -24,6 +24,8 @@ final class AppModel: ObservableObject {
     private let loginItemService: any LoginItemServicing
     private var hasStarted = false
     private var onboardingWindowRequested = false
+    private var dashboardIsVisible = false
+    private var lastSnapshot: SystemSnapshot?
 
     enum MonitoringState: Equatable {
         case monitoring
@@ -106,7 +108,16 @@ final class AppModel: ObservableObject {
     }
 
     func setDashboardVisible(_ visible: Bool) {
-        Task { await coordinator.setDashboardVisible(visible) }
+        dashboardIsVisible = visible
+        if visible, let lastSnapshot {
+            latest = lastSnapshot
+        }
+        Task {
+            await coordinator.setDashboardVisible(visible)
+            if visible {
+                await coordinator.sampleNow()
+            }
+        }
     }
 
     func prepareForSleep() {
@@ -214,11 +225,17 @@ final class AppModel: ObservableObject {
     }
 
     private func publish(snapshot: SystemSnapshot, history: DashboardHistory) {
-        latest = snapshot
-        if history != .empty {
-            self.history = history
+        lastSnapshot = snapshot
+        if dashboardIsVisible {
+            latest = snapshot
+            if history != .empty {
+                self.history = history
+            }
         }
-        menuBarSummary = MenuBarSummary(snapshot: snapshot)
+        let nextMenuBarSummary = MenuBarSummary(snapshot: snapshot)
+        if nextMenuBarSummary != menuBarSummary {
+            menuBarSummary = nextMenuBarSummary
+        }
         guard monitoringState != .paused else { return }
         let hasFailure = [
             isUnavailable(snapshot.cpu),
@@ -226,7 +243,10 @@ final class AppModel: ObservableObject {
             isUnavailable(snapshot.disk),
             isUnavailable(snapshot.network)
         ].contains(true)
-        monitoringState = hasFailure ? .partiallyUnavailable : .monitoring
+        let nextState: MonitoringState = hasFailure ? .partiallyUnavailable : .monitoring
+        if nextState != monitoringState {
+            monitoringState = nextState
+        }
     }
 
     private func isUnavailable<Value: Sendable & Equatable>(

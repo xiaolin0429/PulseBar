@@ -9,7 +9,8 @@ let package = Package(
     ],
     products: [
         .library(name: "PulseBarCore", targets: ["PulseBarCore"]),
-        .executable(name: "SystemMetricsProbe", targets: ["SystemMetricsProbe"])
+        .executable(name: "SystemMetricsProbe", targets: ["SystemMetricsProbe"]),
+        .executable(name: "PerformanceProbe", targets: ["PerformanceProbe"])
     ],
     targets: [
         .target(
@@ -33,6 +34,11 @@ let package = Package(
             name: "SystemMetricsProbe",
             dependencies: ["PulseBarCore"],
             path: "Tools/SystemMetricsProbe"
+        ),
+        .executableTarget(
+            name: "PerformanceProbe",
+            dependencies: ["PulseBarCore"],
+            path: "Tools/PerformanceProbe"
         ),
         .testTarget(
             name: "PulseBarCoreTests",

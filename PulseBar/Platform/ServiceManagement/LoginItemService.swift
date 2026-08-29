@@ -6,7 +6,6 @@ enum LoginItemStatus: Equatable {
     case disabled
     case notFound
 }
-
 protocol LoginItemServicing {
     var status: LoginItemStatus { get }
     func setEnabled(_ enabled: Bool) throws
@@ -36,4 +35,3 @@ struct LoginItemService: LoginItemServicing {
         SMAppService.openSystemSettingsLoginItems()
     }
 }
-

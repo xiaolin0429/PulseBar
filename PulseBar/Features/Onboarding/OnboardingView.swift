@@ -41,6 +41,7 @@ struct OnboardingView: View {
                     set: { model.setLaunchAtLogin($0) }
                 )
             )
+            .accessibilityIdentifier("onboarding.launchAtLogin")
 
             HStack {
                 MenuBarLabelView(
@@ -58,10 +59,12 @@ struct OnboardingView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .keyboardShortcut(.defaultAction)
+                .accessibilityIdentifier("onboarding.start")
             }
         }
         .padding(28)
         .frame(width: 560)
+        .accessibilityIdentifier("onboarding")
     }
 
     private func onboardingFeature(_ title: LocalizedStringKey, icon: String) -> some View {

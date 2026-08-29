@@ -124,10 +124,16 @@ public actor SamplingCoordinator {
         let instant = clock.now
         let started = instant
         sequence &+= 1
-        let cpu = await cpuCollector.sample()
-        let memory = await memoryCollector.sample()
-        let disk = await diskCollector.sample(at: instant)
-        let network = await networkCollector.sample(at: instant)
+        async let cpuValue = cpuCollector.sample()
+        async let memoryValue = memoryCollector.sample()
+        async let diskValue = diskCollector.sample(at: instant)
+        async let networkValue = networkCollector.sample(at: instant)
+        let (cpu, memory, disk, network) = await (
+            cpuValue,
+            memoryValue,
+            diskValue,
+            networkValue
+        )
         let rawSnapshot = SystemSnapshot(
             sequence: sequence,
             wallTime: Date(),
@@ -139,9 +145,11 @@ public actor SamplingCoordinator {
         )
         let snapshot = snapshotNormalizer.normalize(rawSnapshot)
         historyStore.append(snapshot)
-        let history = historyStore.snapshot(endingAt: instant, window: historyWindow)
+        let history = dashboardVisible
+            ? historyStore.snapshot(endingAt: instant, window: historyWindow)
+            : .empty
         if let delivery {
-            await delivery(snapshot, dashboardVisible ? history : .empty)
+            await delivery(snapshot, history)
         }
         let elapsed = started.duration(to: clock.now).secondsValue * 1_000
         if elapsed > 20 {
