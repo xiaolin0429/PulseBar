@@ -27,15 +27,12 @@ struct MenuBarLabelView: View {
             Text("PulseBar")
                 .font(.system(size: 11, weight: .medium, design: .rounded))
         } else {
-            HStack(spacing: 5) {
-                ForEach(displayedModules) { module in
-                    moduleTile(module)
-                }
-            }
-            .font(.system(size: 10, weight: .semibold, design: .rounded))
-            .monospacedDigit()
-            .lineLimit(1)
-            .fixedSize(horizontal: true, vertical: true)
+            Text(verbatim: twoLineLabel)
+                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                .multilineTextAlignment(.center)
+                .lineSpacing(-2)
+                .lineLimit(2)
+                .fixedSize(horizontal: true, vertical: true)
         }
     }
 
@@ -54,41 +51,31 @@ struct MenuBarLabelView: View {
         }
     }
 
-    @ViewBuilder
-    private func moduleTile(_ module: MenuBarModule) -> some View {
+    private var twoLineLabel: String {
+        MetricFormatter.twoLineLabel(
+            columns: displayedModules.map(twoLineColumn(for:))
+        )
+    }
+
+    private func twoLineColumn(for module: MenuBarModule) -> MetricFormatter.TwoLineColumn {
         switch module {
         case .cpu:
-            metricTile(value: summary.cpuPercent.map(percent) ?? "—", label: "CPU")
+            MetricFormatter.TwoLineColumn(
+                top: summary.cpuPercent.map(percent) ?? "—",
+                bottom: "CPU"
+            )
         case .memory:
-            metricTile(value: summary.memoryPercent.map(percent) ?? "—", label: "MEM")
+            MetricFormatter.TwoLineColumn(
+                top: summary.memoryPercent.map(percent) ?? "—",
+                bottom: "MEM"
+            )
         case .disk:
-            metricTile(value: compactDisk, label: "SSD")
+            MetricFormatter.TwoLineColumn(top: compactDisk, bottom: "SSD")
         case .network:
-            networkTile
-        }
-    }
-
-    private func metricTile(value: String, label: String) -> some View {
-        VStack(spacing: -2) {
-            Text(verbatim: value)
-            Text(verbatim: label)
-        }
-        .frame(minWidth: 25)
-    }
-
-    private var networkTile: some View {
-        VStack(alignment: .leading, spacing: -2) {
-            networkRow(arrow: "↑", value: compactUpload)
-            networkRow(arrow: "↓", value: compactDownload)
-        }
-    }
-
-    private func networkRow(arrow: String, value: String) -> some View {
-        HStack(spacing: 1) {
-            Text(verbatim: arrow)
-                .font(.system(size: 9, weight: .bold, design: .rounded))
-                .frame(width: 8)
-            Text(verbatim: value)
+            MetricFormatter.TwoLineColumn(
+                top: "↑\(compactUpload)",
+                bottom: "↓\(compactDownload)"
+            )
         }
     }
 

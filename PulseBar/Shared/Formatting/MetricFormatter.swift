@@ -1,6 +1,16 @@
 import Foundation
 
 public enum MetricFormatter {
+    public struct TwoLineColumn: Equatable, Sendable {
+        public let top: String
+        public let bottom: String
+
+        public init(top: String, bottom: String) {
+            self.top = top
+            self.bottom = bottom
+        }
+    }
+
     public static func bytes(
         _ value: UInt64,
         unitSystem: UnitSystem = .mixedDefault
@@ -37,6 +47,26 @@ public enum MetricFormatter {
         return "\(compactMagnitude(value, base: base))/s"
     }
 
+    public static func twoLineLabel(
+        columns: [TwoLineColumn],
+        spacing: Int = 1
+    ) -> String {
+        guard !columns.isEmpty else { return "" }
+
+        let paddedColumns = columns.map { column in
+            let width = max(column.top.count, column.bottom.count)
+            return (
+                top: centered(column.top, width: width),
+                bottom: centered(column.bottom, width: width)
+            )
+        }
+        let separator = String(repeating: " ", count: max(spacing, 0))
+
+        return paddedColumns.map(\.top).joined(separator: separator)
+            + "\n"
+            + paddedColumns.map(\.bottom).joined(separator: separator)
+    }
+
     private static func compactMagnitude(_ value: Double, base: Double) -> String {
         let suffixes = ["B", "K", "M", "G", "T", "P"]
         var scaled = max(value, 0)
@@ -66,5 +96,14 @@ public enum MetricFormatter {
             return String(Int(rounded))
         }
         return String(format: "%.1f", locale: Locale(identifier: "en_US_POSIX"), value)
+    }
+
+    private static func centered(_ value: String, width: Int) -> String {
+        let padding = max(width - value.count, 0)
+        let leading = padding / 2
+        let trailing = padding - leading
+        return String(repeating: " ", count: leading)
+            + value
+            + String(repeating: " ", count: trailing)
     }
 }

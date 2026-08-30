@@ -32,4 +32,32 @@ final class MetricFormatterTests: XCTestCase {
     func testCompactRateBoundsExtremeFiniteValues() {
         XCTAssertEqual(MetricFormatter.compactBytesPerSecond(.greatestFiniteMagnitude), "999P+/s")
     }
+
+    func testTwoLineLabelKeepsEveryModuleInOneIntrinsicTextBlock() {
+        let label = MetricFormatter.twoLineLabel(
+            columns: [
+                .init(top: "62%", bottom: "MEM"),
+                .init(top: "↑128K/s", bottom: "↓1.8M/s"),
+                .init(top: "18%", bottom: "CPU")
+            ]
+        )
+
+        XCTAssertEqual(label, "62% ↑128K/s 18%\nMEM ↓1.8M/s CPU")
+        let lines = label.split(separator: "\n", omittingEmptySubsequences: false)
+        XCTAssertEqual(lines.count, 2)
+        XCTAssertEqual(lines[0].count, lines[1].count)
+    }
+
+    func testTwoLineLabelCentersShortValuesWithinTheirColumns() {
+        XCTAssertEqual(
+            MetricFormatter.twoLineLabel(
+                columns: [
+                    .init(top: "7%", bottom: "CPU"),
+                    .init(top: "—", bottom: "MEM")
+                ],
+                spacing: 2
+            ),
+            "7%    — \nCPU  MEM"
+        )
+    }
 }
