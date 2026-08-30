@@ -159,9 +159,7 @@ struct SettingsView: View {
                 .frame(width: 24, height: 24)
                 .contentShape(Rectangle())
                 .draggable(module.rawValue) {
-                    Label(moduleLabel(module), systemImage: "line.3.horizontal")
-                        .padding(8)
-                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                    moduleDragPreview(module, isVisible: isVisible)
                 }
                 .help("拖动调整模块顺序")
                 .accessibilityLabel(Text(moduleLabel(module)))
@@ -215,6 +213,31 @@ struct SettingsView: View {
         }
         .opacity(isVisible ? 1 : 0.8)
         .animation(.easeInOut(duration: 0.15), value: orderedModules)
+    }
+
+    private func moduleDragPreview(_ module: MenuBarModule, isVisible: Bool) -> some View {
+        HStack(spacing: 12) {
+            Text(moduleLabel(module))
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Toggle(moduleLabel(module), isOn: .constant(isVisible))
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .frame(width: 42, alignment: .trailing)
+            Image(systemName: "line.3.horizontal")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 24, height: 24)
+        }
+        .frame(width: 500)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.separator.opacity(0.7), lineWidth: 1)
+        }
+        .shadow(color: .black.opacity(0.16), radius: 8, y: 3)
+        .opacity(isVisible ? 1 : 0.8)
     }
 
     private var monitoringSettings: some View {
