@@ -1,9 +1,12 @@
 import SwiftUI
 
 struct SettingsView: View {
+    private static let moduleRowStride: CGFloat = 49
+
     @EnvironmentObject private var model: AppModel
     @State private var confirmReset = false
-    @State private var dropTargetModule: MenuBarModule?
+    @State private var draggedModule: MenuBarModule?
+    @GestureState private var moduleDragOffset: CGFloat = 0
 
     var body: some View {
         TabView {
@@ -126,7 +129,7 @@ struct SettingsView: View {
                 ForEach(model.settings.orderedModules) { module in
                     moduleRow(module)
                 }
-                Text("拖动右侧手柄调整顺序。至少保留一个模块；磁盘仅在完整密度中显示。")
+                Text("上下拖动右侧手柄调整顺序。至少保留一个模块；磁盘仅在完整密度中显示。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -158,12 +161,10 @@ struct SettingsView: View {
                 .foregroundStyle(.secondary)
                 .frame(width: 24, height: 24)
                 .contentShape(Rectangle())
-                .draggable(module.rawValue) {
-                    moduleDragPreview(module, isVisible: isVisible)
-                }
-                .help("拖动调整模块顺序")
+                .gesture(moduleReorderGesture(for: module))
+                .help("上下拖动调整模块顺序")
                 .accessibilityLabel(Text(moduleLabel(module)))
-                .accessibilityHint("拖动调整模块顺序")
+                .accessibilityHint("上下拖动调整模块顺序")
                 .accessibilityAdjustableAction { direction in
                     switch direction {
                     case .increment:
@@ -177,30 +178,22 @@ struct SettingsView: View {
         }
         .padding(.vertical, 2)
         .background {
-            RoundedRectangle(cornerRadius: 6)
-                .fill(
-                    dropTargetModule == module
-                        ? Color.accentColor.opacity(0.1)
-                        : Color.clear
-                )
-        }
-        .contentShape(Rectangle())
-        .dropDestination(for: String.self) { items, _ in
-            dropTargetModule = nil
-            guard let rawValue = items.first,
-                  let draggedModule = MenuBarModule(rawValue: rawValue),
-                  draggedModule != module else { return false }
-            withAnimation(.easeInOut(duration: 0.15)) {
-                model.moveModule(draggedModule, to: module)
-            }
-            return true
-        } isTargeted: { isTargeted in
-            if isTargeted {
-                dropTargetModule = module
-            } else if dropTargetModule == module {
-                dropTargetModule = nil
+            if draggedModule == module {
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(.regularMaterial)
             }
         }
+        .overlay {
+            if draggedModule == module {
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(.separator.opacity(0.7), lineWidth: 1)
+            }
+        }
+        .shadow(
+            color: draggedModule == module ? .black.opacity(0.16) : .clear,
+            radius: 8,
+            y: 3
+        )
         .contextMenu {
             Button("上移") {
                 withAnimation { model.moveModule(module, offset: -1) }
@@ -212,32 +205,48 @@ struct SettingsView: View {
             .disabled(index == orderedModules.count - 1)
         }
         .opacity(isVisible ? 1 : 0.8)
+        .offset(y: draggedModule == module ? constrainedDragOffset(for: module) : 0)
+        .zIndex(draggedModule == module ? 1 : 0)
         .animation(.easeInOut(duration: 0.15), value: orderedModules)
+        .animation(.easeOut(duration: 0.12), value: draggedModule)
     }
 
-    private func moduleDragPreview(_ module: MenuBarModule, isVisible: Bool) -> some View {
-        HStack(spacing: 12) {
-            Text(moduleLabel(module))
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Toggle(moduleLabel(module), isOn: .constant(isVisible))
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .frame(width: 42, alignment: .trailing)
-            Image(systemName: "line.3.horizontal")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.secondary)
-                .frame(width: 24, height: 24)
+    private func moduleReorderGesture(for module: MenuBarModule) -> some Gesture {
+        DragGesture(minimumDistance: 4, coordinateSpace: .global)
+            .updating($moduleDragOffset) { value, state, _ in
+                state = value.translation.height
+            }
+            .onChanged { _ in
+                if draggedModule != module {
+                    draggedModule = module
+                }
+            }
+            .onEnded { value in
+                moveModuleAfterDrag(module, verticalTranslation: value.translation.height)
+                withAnimation(.easeOut(duration: 0.12)) {
+                    draggedModule = nil
+                }
+            }
+    }
+
+    private func constrainedDragOffset(for module: MenuBarModule) -> CGFloat {
+        let orderedModules = model.settings.orderedModules
+        guard let index = orderedModules.firstIndex(of: module) else { return 0 }
+        let minimum = -CGFloat(index) * Self.moduleRowStride
+        let maximum = CGFloat(orderedModules.count - index - 1) * Self.moduleRowStride
+        return min(max(moduleDragOffset, minimum), maximum)
+    }
+
+    private func moveModuleAfterDrag(_ module: MenuBarModule, verticalTranslation: CGFloat) {
+        let orderedModules = model.settings.orderedModules
+        guard let sourceIndex = orderedModules.firstIndex(of: module) else { return }
+        let rowDelta = Int((verticalTranslation / Self.moduleRowStride).rounded())
+        let targetIndex = min(max(sourceIndex + rowDelta, 0), orderedModules.count - 1)
+        guard targetIndex != sourceIndex else { return }
+
+        withAnimation(.easeInOut(duration: 0.15)) {
+            model.moveModule(module, to: orderedModules[targetIndex])
         }
-        .frame(width: 500)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
-        .overlay {
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(.separator.opacity(0.7), lineWidth: 1)
-        }
-        .shadow(color: .black.opacity(0.16), radius: 8, y: 3)
-        .opacity(isVisible ? 1 : 0.8)
     }
 
     private var monitoringSettings: some View {
