@@ -20,6 +20,16 @@ xcodebuild -project PulseBar.xcodeproj -scheme PulseBar -configuration Debug bui
 Scripts/verify-release.sh
 ```
 
+快速生成本地 Universal Release 包：
+
+```bash
+Scripts/package-local-release.sh             # 输出到 dist/
+Scripts/package-local-release.sh --launch    # 打包后重启新版应用
+Scripts/package-local-release.sh --verify    # 先执行完整发布门禁
+```
+
+脚本会生成 `arm64 + x86_64` 的 ad-hoc 签名应用与 ZIP，校验签名、沙盒、资源、依赖及解压产物，并用版本号和 Git 提交号命名。工作区有未提交变更时，文件名会带 `-dirty`。
+
 指标性能基准：
 
 ```bash

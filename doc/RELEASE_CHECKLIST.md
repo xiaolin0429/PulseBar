@@ -10,6 +10,14 @@ Scripts/verify-release.sh
 
 门禁覆盖：单元测试、String Catalog、隐私清单、采集 P95 基准、Debug/Release-AppStore、签名与沙盒、运行时依赖、离线源码边界、沙盒原始 API Probe 和仓库卫生。
 
+门禁通过后，可快速生成本地 Universal Release 包：
+
+```bash
+Scripts/package-local-release.sh --verify
+```
+
+只需快速构建和校验本地产物时，可省略 `--verify`；使用 `--launch` 会在打包后重启 `dist/PulseBar.app`。
+
 ## 长稳与能耗
 
 - [ ] 8 小时默认自适应模式：`Scripts/soak-test.sh 28800 30`
