@@ -86,6 +86,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let root = AnyView(
             DashboardView()
                 .environmentObject(model)
+                .environmentObject(model.dashboardPresentation)
                 .environment(\.unitSystem, model.settings.unitSystem)
                 .environment(\.locale, model.settings.language.locale ?? .current)
         )

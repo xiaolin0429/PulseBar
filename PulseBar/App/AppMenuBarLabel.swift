@@ -3,10 +3,11 @@ import SwiftUI
 
 struct AppMenuBarLabel: View {
     @ObservedObject var model: AppModel
+    @ObservedObject var presentation: MenuBarPresentationState
 
     var body: some View {
         MenuBarLabelView(
-            summary: model.menuBarSummary,
+            summary: presentation.summary,
             preferences: model.menuBarPreferences
         )
         .task {

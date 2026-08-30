@@ -9,7 +9,6 @@ public struct VolumeCapacityRawReader: VolumeRawReading {
             .volumeNameKey,
             .volumeTotalCapacityKey,
             .volumeAvailableCapacityKey,
-            .volumeAvailableCapacityForImportantUsageKey,
             .volumeIsLocalKey,
             .volumeIsInternalKey,
             .volumeIsRemovableKey
@@ -29,9 +28,8 @@ public struct VolumeCapacityRawReader: VolumeRawReading {
                 return nil
             }
 
-            let important = values.volumeAvailableCapacityForImportantUsage
-            let fallback = values.volumeAvailableCapacity.map(Int64.init)
-            let available = max(0, important ?? fallback ?? 0)
+            // Purgeable-capacity keys can trigger expensive CacheDelete work on every refresh.
+            let available = max(0, Int64(values.volumeAvailableCapacity ?? 0))
             let identifier = values.volumeIdentifier.map(String.init(describing:)) ?? url.path
             return RawVolumeCapacity(
                 id: identifier,

@@ -8,16 +8,16 @@ final class AppModel: ObservableObject {
             settingsRepository.menuBarWasRemoved = !isMenuBarItemInserted
         }
     }
-    @Published private(set) var menuBarSummary = MenuBarSummary.unavailable
     @Published var settings: AppSettings {
         didSet { settingsDidChange() }
     }
     @Published private(set) var monitoringState: MonitoringState = .monitoring
-    @Published private(set) var latest: SystemSnapshot?
-    @Published private(set) var history = DashboardHistory.empty
     @Published private(set) var loginItemStatus: LoginItemStatus
     @Published var systemIntegrationError: String?
     @Published private(set) var shouldShowRecoveryNotice: Bool
+
+    let menuBarPresentation = MenuBarPresentationState()
+    let dashboardPresentation = DashboardPresentationState()
 
     private let coordinator: SamplingCoordinator
     private let settingsRepository: SettingsRepository
@@ -110,7 +110,7 @@ final class AppModel: ObservableObject {
     func setDashboardVisible(_ visible: Bool) {
         dashboardIsVisible = visible
         if visible, let lastSnapshot {
-            latest = lastSnapshot
+            dashboardPresentation.show(snapshot: lastSnapshot)
         }
         Task {
             await coordinator.setDashboardVisible(visible)
@@ -228,15 +228,10 @@ final class AppModel: ObservableObject {
     private func publish(snapshot: SystemSnapshot, history: DashboardHistory) {
         lastSnapshot = snapshot
         if dashboardIsVisible {
-            latest = snapshot
-            if history != .empty {
-                self.history = history
-            }
+            dashboardPresentation.publish(snapshot: snapshot, history: history)
         }
         let nextMenuBarSummary = MenuBarSummary(snapshot: snapshot)
-        if nextMenuBarSummary != menuBarSummary {
-            menuBarSummary = nextMenuBarSummary
-        }
+        menuBarPresentation.publish(nextMenuBarSummary)
         guard monitoringState != .paused else { return }
         let hasFailure = [
             isUnavailable(snapshot.cpu),

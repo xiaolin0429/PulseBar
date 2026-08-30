@@ -75,6 +75,10 @@ if rg -n \
     echo "FAIL: source contains an unexpected external-network or private-framework API" >&2
     exit 1
 fi
+if rg -n 'volumeAvailableCapacityForImportantUsage' PulseBar --glob '*.swift'; then
+    echo "FAIL: purgeable-capacity lookup can trigger costly CacheDelete work" >&2
+    exit 1
+fi
 
 echo "[8/9] Sandboxed raw API probe"
 Scripts/verify-sandbox-probe.sh

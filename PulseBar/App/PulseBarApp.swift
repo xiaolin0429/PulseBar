@@ -21,10 +21,14 @@ struct PulseBarApp: App {
         ) {
             DashboardView()
                 .environmentObject(model)
+                .environmentObject(model.dashboardPresentation)
                 .environment(\.unitSystem, model.settings.unitSystem)
                 .environment(\.locale, model.settings.language.locale ?? .current)
         } label: {
-            AppMenuBarLabel(model: model)
+            AppMenuBarLabel(
+                model: model,
+                presentation: model.menuBarPresentation
+            )
         }
         .menuBarExtraStyle(.window)
 

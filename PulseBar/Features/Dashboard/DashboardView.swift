@@ -3,6 +3,7 @@ import SwiftUI
 
 struct DashboardView: View {
     @EnvironmentObject private var model: AppModel
+    @EnvironmentObject private var presentation: DashboardPresentationState
     @Environment(\.locale) private var locale
 
     var body: some View {
@@ -10,19 +11,19 @@ struct DashboardView: View {
             header
             Divider()
             ScrollView {
-                if let snapshot = model.latest {
+                if let snapshot = presentation.latest {
                     VStack(spacing: 12) {
-                        CPUCardView(metric: snapshot.cpu, history: model.history.cpuUsage)
-                        MemoryCardView(metric: snapshot.memory, history: model.history.memoryUsage)
+                        CPUCardView(metric: snapshot.cpu, history: presentation.history.cpuUsage)
+                        MemoryCardView(metric: snapshot.memory, history: presentation.history.memoryUsage)
                         DiskCardView(
                             metric: snapshot.disk,
-                            readHistory: model.history.diskRead,
-                            writeHistory: model.history.diskWrite
+                            readHistory: presentation.history.diskRead,
+                            writeHistory: presentation.history.diskWrite
                         )
                         NetworkCardView(
                             metric: snapshot.network,
-                            downloadHistory: model.history.networkDownload,
-                            uploadHistory: model.history.networkUpload
+                            downloadHistory: presentation.history.networkDownload,
+                            uploadHistory: presentation.history.networkUpload
                         )
                     }
                     .padding(12)
@@ -60,7 +61,7 @@ struct DashboardView: View {
                         .fill(statusColor)
                         .frame(width: 6, height: 6)
                     Text(statusText)
-                    if let snapshot = model.latest {
+                    if let snapshot = presentation.latest {
                         Text("·")
                         Text(snapshot.wallTime.formatted(.relative(presentation: .numeric)))
                     }

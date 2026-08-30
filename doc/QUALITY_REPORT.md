@@ -32,9 +32,21 @@
 | Memory raw | 0.00 ms | 3 ms | PASS |
 | Network counters | 0.01 ms | 3 ms | PASS |
 | Disk I/O counters | 0.04 ms | 8 ms | PASS |
-| Volume capacity（低频） | 6.28 ms | 20 ms | PASS |
+| Volume capacity（低频） | 0.02 ms | 20 ms | PASS |
 
 采样协调器并发执行四类采集；面板关闭时不物化图表数组，也不向 SwiftUI 发布完整快照。
+
+## 常驻 CPU 尖峰优化
+
+2026-08-30 真机诊断确认，磁盘容量读取使用
+`volumeAvailableCapacityForImportantUsageKey` 时，macOS 26 会进入 `CacheDelete` 的
+可清理空间查询，产生持续数秒的额外队列工作。该值已改为普通可用容量：
+
+- Volume capacity 500 次基准由 P95 `6.28 ms` 降至 `0.02 ms`；
+- 菜单栏摘要与监控面板改用独立发布状态，避免一次采样使顶层 App、设置页和图表共同失效；
+- 默认自适应、面板关闭的 Release 真机 60 个 1 秒样本：平均 CPU `0.280%`，峰值 `0.7%`；
+- 同一测试窗口覆盖六次 10 秒容量刷新，未再观察到 `CacheDelete` 调用或两位数 CPU 尖峰；
+- 发布门禁禁止重新引入 `volumeAvailableCapacityForImportantUsage`。
 
 ## 趋势图内存优化
 
