@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var recoveryWindow: NSWindow?
     private var dashboardWindow: NSWindow?
     private weak var settingsWindow: NSWindow?
+    private var shouldBringSettingsWindowToFront = false
 
     override init() {
         super.init()
@@ -101,25 +102,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func registerSettingsWindow(_ window: NSWindow) {
         settingsWindow = window
+        guard shouldBringSettingsWindowToFront else { return }
+        shouldBringSettingsWindowToFront = false
+        bringSettingsWindowToFront()
     }
 
-    func showSettingsWindow() {
-        let application = NSApplication.shared
-        application.activate(ignoringOtherApps: true)
-
-        if let settingsWindow {
-            if settingsWindow.isMiniaturized {
-                settingsWindow.deminiaturize(nil)
-            }
-            settingsWindow.makeKeyAndOrderFront(nil)
+    func openSettings(createIfNeeded: () -> Void) {
+        if bringSettingsWindowToFront() {
             return
         }
 
-        application.sendAction(
-            Selector(("showSettingsWindow:")),
-            to: nil,
-            from: nil
-        )
+        shouldBringSettingsWindowToFront = true
+        createIfNeeded()
+        NSApplication.shared.activate(ignoringOtherApps: true)
+    }
+
+    @discardableResult
+    private func bringSettingsWindowToFront() -> Bool {
+        guard let settingsWindow else { return false }
+        let application = NSApplication.shared
+        application.activate(ignoringOtherApps: true)
+        if settingsWindow.isMiniaturized {
+            settingsWindow.deminiaturize(nil)
+        }
+        settingsWindow.makeKeyAndOrderFront(nil)
+        return true
     }
 
     private func present(

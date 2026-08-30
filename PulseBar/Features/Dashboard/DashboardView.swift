@@ -93,9 +93,7 @@ struct DashboardView: View {
     }
 
     private var settingsButton: some View {
-        Button {
-            AppActions.openSettings()
-        } label: {
+        SettingsWindowButton {
             settingsButtonLabel
         }
     }

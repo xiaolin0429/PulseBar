@@ -19,10 +19,11 @@ struct RecoveryView: View {
                 .font(.caption)
                 .foregroundStyle(.tertiary)
             HStack {
-                Button("打开设置") {
+                SettingsWindowButton(beforeOpen: {
                     model.dismissRecoveryNotice()
                     NSApplication.shared.keyWindow?.close()
-                    AppActions.openSettings()
+                }) {
+                    Text("打开设置")
                 }
                 Spacer()
                 Button("知道了") {
