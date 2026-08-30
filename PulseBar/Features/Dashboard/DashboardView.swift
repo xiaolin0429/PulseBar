@@ -7,6 +7,20 @@ struct DashboardView: View {
     @Environment(\.locale) private var locale
 
     var body: some View {
+        Group {
+            if presentation.isVisible {
+                dashboardContent
+            } else {
+                Color.clear
+                    .frame(width: 420)
+                    .frame(minHeight: 500, idealHeight: 650, maxHeight: 720)
+            }
+        }
+        .onAppear { model.setDashboardVisible(true) }
+        .onDisappear { model.setDashboardVisible(false) }
+    }
+
+    private var dashboardContent: some View {
         VStack(spacing: 0) {
             header
             Divider()
@@ -43,8 +57,6 @@ struct DashboardView: View {
         .frame(width: 420)
         .frame(minHeight: 500, idealHeight: 650, maxHeight: 720)
         .accessibilityIdentifier("dashboard")
-        .onAppear { model.setDashboardVisible(true) }
-        .onDisappear { model.setDashboardVisible(false) }
     }
 
     private var header: some View {

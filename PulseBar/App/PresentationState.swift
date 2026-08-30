@@ -13,6 +13,7 @@ final class MenuBarPresentationState: ObservableObject {
 @MainActor
 final class DashboardPresentationState: ObservableObject {
     struct Content: Equatable {
+        var isVisible = false
         var snapshot: SystemSnapshot?
         var history = DashboardHistory.empty
     }
@@ -21,15 +22,27 @@ final class DashboardPresentationState: ObservableObject {
 
     var latest: SystemSnapshot? { content.snapshot }
     var history: DashboardHistory { content.history }
+    var isVisible: Bool { content.isVisible }
 
     func publish(snapshot: SystemSnapshot, history: DashboardHistory) {
-        let next = Content(snapshot: snapshot, history: history)
+        let next = Content(isVisible: true, snapshot: snapshot, history: history)
         guard content != next else { return }
         content = next
     }
 
     func show(snapshot: SystemSnapshot?) {
-        guard let snapshot, content.snapshot != snapshot else { return }
-        content = Content(snapshot: snapshot, history: content.history)
+        let next = Content(
+            isVisible: true,
+            snapshot: snapshot ?? content.snapshot,
+            history: content.history
+        )
+        guard content != next else { return }
+        content = next
+    }
+
+    func hide() {
+        let emptyContent = Content()
+        guard content != emptyContent else { return }
+        content = emptyContent
     }
 }

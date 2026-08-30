@@ -109,8 +109,10 @@ final class AppModel: ObservableObject {
 
     func setDashboardVisible(_ visible: Bool) {
         dashboardIsVisible = visible
-        if visible, let lastSnapshot {
+        if visible {
             dashboardPresentation.show(snapshot: lastSnapshot)
+        } else {
+            dashboardPresentation.hide()
         }
         Task {
             await coordinator.setDashboardVisible(visible)
