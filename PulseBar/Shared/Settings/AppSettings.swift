@@ -48,13 +48,14 @@ public enum AppOpenBehavior: String, CaseIterable, Codable, Sendable, Identifiab
 }
 
 public struct AppSettings: Codable, Equatable, Sendable {
-    public var schemaVersion = 1
+    public var schemaVersion = 2
     public var launchAtLogin = false
     public var refreshPolicy: RefreshPolicy = .adaptive
     public var historyWindow: HistoryWindow = .seconds60
     public var unitSystem: UnitSystem = .mixedDefault
     public var menuBarPreset: MenuBarPreset = .standard
     public var visibleModules: [MenuBarModule] = [.cpu, .memory, .network]
+    public var moduleOrder: [MenuBarModule]? = MenuBarModule.allCases
     public var showDecimals = false
     public var language: AppLanguage = .system
     public var showDockIcon = false
@@ -62,14 +63,49 @@ public struct AppSettings: Codable, Equatable, Sendable {
 
     public init() {}
 
+    public var orderedModules: [MenuBarModule] {
+        var seen: Set<MenuBarModule> = []
+        let preferredOrder = moduleOrder ?? visibleModules
+        var result = preferredOrder.filter { seen.insert($0).inserted }
+        result.append(contentsOf: MenuBarModule.allCases.filter { seen.insert($0).inserted })
+        return result
+    }
+
+    public mutating func moveModule(_ module: MenuBarModule, to target: MenuBarModule) {
+        var order = orderedModules
+        guard let sourceIndex = order.firstIndex(of: module),
+              let targetIndex = order.firstIndex(of: target),
+              sourceIndex != targetIndex else { return }
+
+        let movedModule = order.remove(at: sourceIndex)
+        order.insert(movedModule, at: targetIndex)
+        applyModuleOrder(order)
+    }
+
+    public mutating func moveModule(_ module: MenuBarModule, offset: Int) {
+        let order = orderedModules
+        guard let sourceIndex = order.firstIndex(of: module) else { return }
+        let targetIndex = sourceIndex + offset
+        guard order.indices.contains(targetIndex) else { return }
+        moveModule(module, to: order[targetIndex])
+    }
+
     public func normalized() -> AppSettings {
         var result = self
-        result.schemaVersion = 1
-        var seen: Set<MenuBarModule> = []
-        result.visibleModules = visibleModules.filter { seen.insert($0).inserted }
+        result.schemaVersion = 2
+        let order = orderedModules
+        result.moduleOrder = order
+        let visibleSet = Set(visibleModules)
+        result.visibleModules = order.filter { visibleSet.contains($0) }
         if result.visibleModules.isEmpty {
-            result.visibleModules = [.cpu]
+            result.visibleModules = [order.first ?? .cpu]
         }
         return result
+    }
+
+    private mutating func applyModuleOrder(_ order: [MenuBarModule]) {
+        moduleOrder = order
+        let visibleSet = Set(visibleModules)
+        visibleModules = order.filter { visibleSet.contains($0) }
     }
 }

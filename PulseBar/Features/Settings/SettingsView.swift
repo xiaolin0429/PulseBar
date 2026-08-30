@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject private var model: AppModel
     @State private var confirmReset = false
+    @State private var dropTargetModule: MenuBarModule?
 
     var body: some View {
         TabView {
@@ -122,10 +123,10 @@ struct SettingsView: View {
             }
 
             Section("模块与顺序") {
-                ForEach(MenuBarModule.allCases) { module in
+                ForEach(model.settings.orderedModules) { module in
                     moduleRow(module)
                 }
-                Text("至少保留一个模块。磁盘仅在完整密度中显示。")
+                Text("拖动右侧手柄调整顺序。至少保留一个模块；磁盘仅在完整密度中显示。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -136,8 +137,11 @@ struct SettingsView: View {
 
     private func moduleRow(_ module: MenuBarModule) -> some View {
         let isVisible = model.settings.visibleModules.contains(module)
-        let index = model.settings.visibleModules.firstIndex(of: module)
-        return HStack {
+        let orderedModules = model.settings.orderedModules
+        let index = orderedModules.firstIndex(of: module)
+        return HStack(spacing: 12) {
+            Text(moduleLabel(module))
+                .frame(maxWidth: .infinity, alignment: .leading)
             Toggle(
                 moduleLabel(module),
                 isOn: Binding(
@@ -145,23 +149,72 @@ struct SettingsView: View {
                     set: { model.toggleModule(module, visible: $0) }
                 )
             )
-            Spacer()
-            if let index {
-                Button { model.moveModule(module, offset: -1) } label: {
-                    Image(systemName: "chevron.up")
+            .labelsHidden()
+            .toggleStyle(.switch)
+            .frame(width: 42, alignment: .trailing)
+
+            Image(systemName: "line.3.horizontal")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 24, height: 24)
+                .contentShape(Rectangle())
+                .draggable(module.rawValue) {
+                    Label(moduleLabel(module), systemImage: "line.3.horizontal")
+                        .padding(8)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
                 }
-                .buttonStyle(.borderless)
-                .disabled(index == 0)
-                .help("上移")
-                Button { model.moveModule(module, offset: 1) } label: {
-                    Image(systemName: "chevron.down")
+                .help("拖动调整模块顺序")
+                .accessibilityLabel(Text(moduleLabel(module)))
+                .accessibilityHint("拖动调整模块顺序")
+                .accessibilityAdjustableAction { direction in
+                    switch direction {
+                    case .increment:
+                        withAnimation { model.moveModule(module, offset: 1) }
+                    case .decrement:
+                        withAnimation { model.moveModule(module, offset: -1) }
+                    @unknown default:
+                        break
+                    }
                 }
-                .buttonStyle(.borderless)
-                .disabled(index == model.settings.visibleModules.count - 1)
-                .help("下移")
+        }
+        .padding(.vertical, 2)
+        .background {
+            RoundedRectangle(cornerRadius: 6)
+                .fill(
+                    dropTargetModule == module
+                        ? Color.accentColor.opacity(0.1)
+                        : Color.clear
+                )
+        }
+        .contentShape(Rectangle())
+        .dropDestination(for: String.self) { items, _ in
+            dropTargetModule = nil
+            guard let rawValue = items.first,
+                  let draggedModule = MenuBarModule(rawValue: rawValue),
+                  draggedModule != module else { return false }
+            withAnimation(.easeInOut(duration: 0.15)) {
+                model.moveModule(draggedModule, to: module)
+            }
+            return true
+        } isTargeted: { isTargeted in
+            if isTargeted {
+                dropTargetModule = module
+            } else if dropTargetModule == module {
+                dropTargetModule = nil
             }
         }
+        .contextMenu {
+            Button("上移") {
+                withAnimation { model.moveModule(module, offset: -1) }
+            }
+            .disabled(index == 0)
+            Button("下移") {
+                withAnimation { model.moveModule(module, offset: 1) }
+            }
+            .disabled(index == orderedModules.count - 1)
+        }
         .opacity(isVisible ? 1 : 0.8)
+        .animation(.easeInOut(duration: 0.15), value: orderedModules)
     }
 
     private var monitoringSettings: some View {

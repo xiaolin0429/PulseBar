@@ -149,10 +149,11 @@ final class AppModel: ObservableObject {
     }
 
     func moveModule(_ module: MenuBarModule, offset: Int) {
-        guard let index = settings.visibleModules.firstIndex(of: module) else { return }
-        let destination = index + offset
-        guard settings.visibleModules.indices.contains(destination) else { return }
-        settings.visibleModules.swapAt(index, destination)
+        settings.moveModule(module, offset: offset)
+    }
+
+    func moveModule(_ module: MenuBarModule, to target: MenuBarModule) {
+        settings.moveModule(module, to: target)
     }
 
     func setLaunchAtLogin(_ enabled: Bool) {
