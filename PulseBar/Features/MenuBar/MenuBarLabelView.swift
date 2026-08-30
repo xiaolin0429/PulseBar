@@ -6,47 +6,121 @@ struct MenuBarLabelView: View {
     @Environment(\.locale) private var locale
 
     var body: some View {
-        Text(label)
-            .monospacedDigit()
+        visualLabel
             .foregroundStyle(color)
+            .accessibilityElement(children: .ignore)
             .accessibilityLabel(accessibilityLabel)
             .transaction { transaction in
                 transaction.animation = nil
             }
     }
 
-    private var label: String {
-        let modules = preferences.visibleModules.compactMap(label(for:))
+    @ViewBuilder
+    private var visualLabel: some View {
+        if preferences.preset == .compact {
+            Text(compactLabel)
+                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .monospacedDigit()
+                .lineLimit(1)
+                .fixedSize()
+        } else if displayedModules.isEmpty {
+            Text("PulseBar")
+                .font(.system(size: 11, weight: .medium, design: .rounded))
+        } else {
+            HStack(spacing: 5) {
+                ForEach(displayedModules) { module in
+                    moduleTile(module)
+                }
+            }
+            .font(.system(size: 10, weight: .semibold, design: .rounded))
+            .monospacedDigit()
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: true)
+        }
+    }
+
+    private var compactLabel: String {
+        let modules = displayedModules.compactMap(compactLabel(for:))
         return modules.isEmpty ? "PulseBar" : modules.joined(separator: separator)
     }
 
     private var separator: String {
-        preferences.preset == .compact ? " · " : "  "
+        " · "
     }
 
-    private func label(for module: MenuBarModule) -> String? {
+    private var displayedModules: [MenuBarModule] {
+        preferences.visibleModules.filter { module in
+            module != .disk || preferences.preset == .complete
+        }
+    }
+
+    @ViewBuilder
+    private func moduleTile(_ module: MenuBarModule) -> some View {
         switch module {
         case .cpu:
-            let value = summary.cpuPercent.map(percent) ?? "—"
-            return preferences.preset == .compact ? value : "CPU \(value)"
+            metricTile(value: summary.cpuPercent.map(percent) ?? "—", label: "CPU")
         case .memory:
-            let value = summary.memoryPercent.map(percent) ?? "—"
-            return preferences.preset == .compact ? value : "MEM \(value)"
+            metricTile(value: summary.memoryPercent.map(percent) ?? "—", label: "MEM")
         case .disk:
-            guard preferences.preset == .complete else { return nil }
-            let value = summary.diskFreeBytes.map {
-                MetricFormatter.bytes($0, unitSystem: preferences.unitSystem)
-            } ?? "—"
-            return "SSD \(value)"
+            metricTile(value: compactDisk, label: "SSD")
         case .network:
-            let download = summary.downloadBytesPerSecond.map {
-                MetricFormatter.bytesPerSecond($0, unitSystem: preferences.unitSystem)
-            } ?? "—"
-            let upload = summary.uploadBytesPerSecond.map {
-                MetricFormatter.bytesPerSecond($0, unitSystem: preferences.unitSystem)
-            } ?? "—"
-            return preferences.preset == .compact ? "↓\(download)" : "↓ \(download)  ↑ \(upload)"
+            networkTile
         }
+    }
+
+    private func metricTile(value: String, label: String) -> some View {
+        VStack(spacing: -2) {
+            Text(verbatim: value)
+            Text(verbatim: label)
+        }
+        .frame(minWidth: 25)
+    }
+
+    private var networkTile: some View {
+        VStack(alignment: .leading, spacing: -2) {
+            networkRow(arrow: "↑", value: compactUpload)
+            networkRow(arrow: "↓", value: compactDownload)
+        }
+    }
+
+    private func networkRow(arrow: String, value: String) -> some View {
+        HStack(spacing: 1) {
+            Text(verbatim: arrow)
+                .font(.system(size: 9, weight: .bold, design: .rounded))
+                .frame(width: 8)
+            Text(verbatim: value)
+        }
+    }
+
+    private func compactLabel(for module: MenuBarModule) -> String? {
+        switch module {
+        case .cpu:
+            summary.cpuPercent.map(percent) ?? "—"
+        case .memory:
+            summary.memoryPercent.map(percent) ?? "—"
+        case .disk:
+            compactDisk
+        case .network:
+            "↓\(compactDownload)"
+        }
+    }
+
+    private var compactDisk: String {
+        summary.diskFreeBytes.map {
+            MetricFormatter.compactBytes($0, unitSystem: preferences.unitSystem)
+        } ?? "—"
+    }
+
+    private var compactDownload: String {
+        summary.downloadBytesPerSecond.map {
+            MetricFormatter.compactBytesPerSecond($0, unitSystem: preferences.unitSystem)
+        } ?? "—"
+    }
+
+    private var compactUpload: String {
+        summary.uploadBytesPerSecond.map {
+            MetricFormatter.compactBytesPerSecond($0, unitSystem: preferences.unitSystem)
+        } ?? "—"
     }
 
     private var accessibilityLabel: String {
