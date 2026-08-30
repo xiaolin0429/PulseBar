@@ -81,12 +81,7 @@ struct DashboardView: View {
             .accessibilityLabel(monitoringAction)
             .accessibilityIdentifier("dashboard.monitoring.toggle")
 
-            Button {
-                AppActions.openSettings()
-            } label: {
-                Image(systemName: "gearshape")
-                    .frame(width: 16, height: 16)
-            }
+            settingsButton
             .buttonStyle(.borderless)
             .help("打开设置")
             .accessibilityLabel("打开设置")
@@ -94,6 +89,26 @@ struct DashboardView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
+    }
+
+    @ViewBuilder
+    private var settingsButton: some View {
+        if #available(macOS 14.0, *) {
+            SettingsLink {
+                settingsButtonLabel
+            }
+        } else {
+            Button {
+                AppActions.openSettings()
+            } label: {
+                settingsButtonLabel
+            }
+        }
+    }
+
+    private var settingsButtonLabel: some View {
+        Image(systemName: "gearshape")
+            .frame(width: 16, height: 16)
     }
 
     private var footer: some View {
