@@ -27,12 +27,10 @@ struct MenuBarLabelView: View {
             Text("PulseBar")
                 .font(.system(size: 11, weight: .medium, design: .rounded))
         } else {
-            Text(verbatim: twoLineLabel)
-                .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                .multilineTextAlignment(.center)
-                .lineSpacing(-2)
-                .lineLimit(2)
-                .fixedSize(horizontal: true, vertical: true)
+            Image(nsImage: MenuBarLabelImageRenderer.render(twoLineLabel))
+                .renderingMode(.template)
+                .interpolation(.high)
+                .fixedSize()
         }
     }
 
