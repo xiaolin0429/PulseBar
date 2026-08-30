@@ -11,7 +11,7 @@
 
 ## 已通过
 
-- `swift test`：28 项测试通过，0 失败。
+- `swift test`：38 项测试通过，0 失败。
 - `Scripts/verify-release.sh`：完整自动化门禁通过。
 - Debug、Release-AppStore、Release-Direct arm64 构建通过。
 - Release-AppStore x86_64 交叉编译通过；此结果仅证明编译，不等同 Intel 实机运行验收。
@@ -64,6 +64,15 @@
 - physical footprint：首个样本 34,657 KB，末样本 35,665 KB，峰值 35,665 KB；
 - 外部 socket：0；
 - CPU、内存、磁盘、网络单/双序列趋势图均通过真实 UI 与可访问性检查。
+
+## 设置窗口前置回归
+
+设置按钮不再直接依赖 `SettingsLink` 的默认复用行为。设置场景会注册其真实
+`NSWindow`；重复点击设置时，应用先激活自身，再将已有设置窗口设为 key 并前置，
+关闭设置后仍由系统场景重新创建窗口。
+
+真机回归覆盖：设置窗口已存在并被 Finder 与监控面板覆盖时再次点击设置、关闭设置
+后再次点击。两种场景均立即显示 `com_apple_SwiftUI_Settings_window`，未创建重复窗口。
 
 ## 五分钟稳态门禁
 

@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct SettingsView: View {
@@ -20,6 +21,10 @@ struct SettingsView: View {
                 .tabItem { Label("隐私与关于", systemImage: "hand.raised") }
         }
         .frame(width: 600, height: 440)
+        .background {
+            SettingsWindowRegistrationView()
+                .frame(width: 0, height: 0)
+        }
         .alert("恢复默认设置？", isPresented: $confirmReset) {
             Button("取消", role: .cancel) {}
             Button("恢复默认", role: .destructive) { model.resetSettings() }
@@ -343,5 +348,22 @@ struct SettingsView: View {
             ?? "1.0.0"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
         return "\(version) (\(build))"
+    }
+}
+
+private struct SettingsWindowRegistrationView: NSViewRepresentable {
+    func makeNSView(context: Context) -> SettingsWindowRegistrationNSView {
+        SettingsWindowRegistrationNSView()
+    }
+
+    func updateNSView(_ nsView: SettingsWindowRegistrationNSView, context: Context) {}
+}
+
+@MainActor
+private final class SettingsWindowRegistrationNSView: NSView {
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        guard let window else { return }
+        AppDelegate.shared?.registerSettingsWindow(window)
     }
 }

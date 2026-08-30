@@ -92,18 +92,11 @@ struct DashboardView: View {
         .padding(.vertical, 12)
     }
 
-    @ViewBuilder
     private var settingsButton: some View {
-        if #available(macOS 14.0, *) {
-            SettingsLink {
-                settingsButtonLabel
-            }
-        } else {
-            Button {
-                AppActions.openSettings()
-            } label: {
-                settingsButtonLabel
-            }
+        Button {
+            AppActions.openSettings()
+        } label: {
+            settingsButtonLabel
         }
     }
 

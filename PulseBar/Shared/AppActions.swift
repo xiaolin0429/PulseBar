@@ -3,12 +3,17 @@ import AppKit
 @MainActor
 enum AppActions {
     static func openSettings() {
+        if let appDelegate = AppDelegate.shared {
+            appDelegate.showSettingsWindow()
+            return
+        }
+
+        NSApplication.shared.activate(ignoringOtherApps: true)
         NSApplication.shared.sendAction(
             Selector(("showSettingsWindow:")),
             to: nil,
             from: nil
         )
-        NSApplication.shared.activate(ignoringOtherApps: true)
     }
 
     static func openActivityMonitor() {

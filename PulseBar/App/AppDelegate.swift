@@ -9,6 +9,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var onboardingWindow: NSWindow?
     private var recoveryWindow: NSWindow?
     private var dashboardWindow: NSWindow?
+    private weak var settingsWindow: NSWindow?
 
     override init() {
         super.init()
@@ -95,6 +96,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             title: "PulseBar",
             size: NSSize(width: 420, height: 650),
             rootView: root
+        )
+    }
+
+    func registerSettingsWindow(_ window: NSWindow) {
+        settingsWindow = window
+    }
+
+    func showSettingsWindow() {
+        let application = NSApplication.shared
+        application.activate(ignoringOtherApps: true)
+
+        if let settingsWindow {
+            if settingsWindow.isMiniaturized {
+                settingsWindow.deminiaturize(nil)
+            }
+            settingsWindow.makeKeyAndOrderFront(nil)
+            return
+        }
+
+        application.sendAction(
+            Selector(("showSettingsWindow:")),
+            to: nil,
+            from: nil
         )
     }
 
