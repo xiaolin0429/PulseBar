@@ -75,8 +75,8 @@ if rg -n \
     echo "FAIL: source contains an unexpected external-network or private-framework API" >&2
     exit 1
 fi
-if rg -n 'volumeAvailableCapacityForImportantUsage' PulseBar --glob '*.swift'; then
-    echo "FAIL: purgeable-capacity lookup can trigger costly CacheDelete work" >&2
+if rg -n 'volumeAvailableCapacity(Key|ForImportantUsage)' PulseBar --glob '*.swift'; then
+    echo "FAIL: URL capacity lookup can enter costly CacheDelete work; use statfs" >&2
     exit 1
 fi
 

@@ -107,7 +107,7 @@ struct DiskCardView: View {
                         )
                     ) {
                         Text(
-                            "容量优先使用系统提供的“可用于重要用途”数值；APFS 快照和可清除空间可能令其与 Finder 略有差异。读写速率来自块存储累计计数器。"
+                            "容量使用文件系统报告的普通可用空间，不计入可能触发额外扫描的可清除空间；因此可能与 Finder 略有差异。读写速率来自块存储累计计数器。"
                         )
                         .font(.caption2)
                         .foregroundStyle(.secondary)

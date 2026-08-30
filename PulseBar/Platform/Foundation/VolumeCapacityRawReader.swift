@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 
 public struct VolumeCapacityRawReader: VolumeRawReading {
@@ -7,8 +8,6 @@ public struct VolumeCapacityRawReader: VolumeRawReading {
         let keys: Set<URLResourceKey> = [
             .volumeIdentifierKey,
             .volumeNameKey,
-            .volumeTotalCapacityKey,
-            .volumeAvailableCapacityKey,
             .volumeIsLocalKey,
             .volumeIsInternalKey,
             .volumeIsRemovableKey
@@ -23,20 +22,17 @@ public struct VolumeCapacityRawReader: VolumeRawReading {
         return urls.compactMap { url in
             guard let values = try? url.resourceValues(forKeys: keys),
                   values.volumeIsLocal != false,
-                  let total = values.volumeTotalCapacity,
-                  total > 0 else {
+                  let capacity = capacity(for: url) else {
                 return nil
             }
 
-            // Purgeable-capacity keys can trigger expensive CacheDelete work on every refresh.
-            let available = max(0, Int64(values.volumeAvailableCapacity ?? 0))
             let identifier = values.volumeIdentifier.map(String.init(describing:)) ?? url.path
             return RawVolumeCapacity(
                 id: identifier,
                 name: values.volumeName ?? url.lastPathComponent,
                 mountPath: url.path,
-                totalBytes: UInt64(total),
-                availableBytes: UInt64(available),
+                totalBytes: capacity.total,
+                availableBytes: capacity.available,
                 isLocal: values.volumeIsLocal,
                 isInternal: values.volumeIsInternal,
                 isRemovable: values.volumeIsRemovable
@@ -47,5 +43,23 @@ public struct VolumeCapacityRawReader: VolumeRawReading {
             if right.mountPath == "/" { return false }
             return left.name.localizedStandardCompare(right.name) == .orderedAscending
         }
+    }
+
+    private func capacity(for url: URL) -> (total: UInt64, available: UInt64)? {
+        var statistics = statfs()
+        let result = url.withUnsafeFileSystemRepresentation { path in
+            guard let path else { return Int32(-1) }
+            return statfs(path, &statistics)
+        }
+        guard result == 0 else { return nil }
+
+        let blockSize = UInt64(statistics.f_bsize)
+        let total = UInt64(statistics.f_blocks).multipliedReportingOverflow(by: blockSize)
+        let available = UInt64(statistics.f_bavail).multipliedReportingOverflow(by: blockSize)
+        guard !total.overflow, total.partialValue > 0, !available.overflow else { return nil }
+        return (
+            total: total.partialValue,
+            available: min(available.partialValue, total.partialValue)
+        )
     }
 }

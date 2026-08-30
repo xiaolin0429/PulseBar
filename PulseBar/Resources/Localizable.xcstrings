@@ -491,12 +491,12 @@
         }
       }
     },
-    "容量优先使用系统提供的“可用于重要用途”数值；APFS 快照和可清除空间可能令其与 Finder 略有差异。读写速率来自块存储累计计数器。": {
+    "容量使用文件系统报告的普通可用空间，不计入可能触发额外扫描的可清除空间；因此可能与 Finder 略有差异。读写速率来自块存储累计计数器。": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Capacity prefers the system's value available for important usage. APFS snapshots and purgeable space may cause small differences from Finder. Read and write rates come from cumulative block-storage counters."
+            "value": "Capacity uses ordinary free space reported by the file system and excludes purgeable space that can require an extra scan, so it may differ slightly from Finder. Read and write rates come from cumulative block-storage counters."
           }
         }
       }
