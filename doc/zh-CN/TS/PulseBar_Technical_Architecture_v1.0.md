@@ -1,3 +1,5 @@
+[English](../../en/TS/PulseBar_Technical_Architecture_v1.0.md) | 简体中文
+
 # PulseBar 技术架构文档（TS）v1.0
 
 产品：PulseBar

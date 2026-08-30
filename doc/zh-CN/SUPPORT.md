@@ -1,3 +1,5 @@
+[English](../en/SUPPORT.md) | 简体中文
+
 # PulseBar 支持与已知限制
 
 更新日期：2026-08-31

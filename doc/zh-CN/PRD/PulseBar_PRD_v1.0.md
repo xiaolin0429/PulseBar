@@ -1,3 +1,5 @@
+[English](../../en/PRD/PulseBar_PRD_v1.0.md) | 简体中文
+
 # PulseBar 产品需求文档（PRD）v1.0
 
 产品名称：PulseBar

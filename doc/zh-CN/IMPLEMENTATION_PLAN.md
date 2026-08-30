@@ -1,3 +1,5 @@
+[English](../en/IMPLEMENTATION_PLAN.md) | 简体中文
+
 # PulseBar v1.0 实施基线与里程碑记录
 
 更新日期：2026-08-31

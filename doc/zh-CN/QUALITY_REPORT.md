@@ -1,3 +1,5 @@
+[English](../en/QUALITY_REPORT.md) | 简体中文
+
 # PulseBar v1.0 质量与验证报告
 
 更新日期：2026-08-31
@@ -44,9 +46,9 @@
 |---|---:|---:|---|
 | CPU raw | 0.01 ms | 3 ms | PASS |
 | Memory raw | 0.00 ms | 3 ms | PASS |
-| Network counters | 0.01 ms | 3 ms | PASS |
+| Network counters | 0.02 ms | 3 ms | PASS |
 | Disk I/O counters | 0.04 ms | 8 ms | PASS |
-| Volume capacity（低频） | 0.02 ms | 20 ms | PASS |
+| Volume capacity（低频） | 0.01 ms | 20 ms | PASS |
 
 采样协调器在一个 actor 中管理生命周期，并使用结构化并发同时读取四类指标。只有监控面板可见时才物化完整快照和图表历史。
 

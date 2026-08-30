@@ -1,37 +1,39 @@
+English | [简体中文](README.zh-CN.md)
+
 # PulseBar
 
-PulseBar 是一款原生、轻量的 macOS 菜单栏系统监控工具。它使用一个紧凑的菜单栏项目展示 CPU、内存、磁盘和网络状态；点击后可查看指标拆分、最近趋势与数据口径。
+PulseBar is a native, lightweight system monitor for the macOS menu bar. A single compact menu bar item presents CPU, memory, disk, and network status; click it to inspect metric breakdowns, recent trends, and measurement definitions.
 
-当前正式基线为 **v1.0.0（Build 1）**，最低支持 **macOS 13**。
+The current formal baseline is **v1.0.0 (Build 1)** and requires **macOS 13 or later**.
 
-## 核心能力
+## Core capabilities
 
-- CPU：总占用、用户/系统占用、逻辑核心数、负载平均值和最近趋势。
-- 内存：占用、可用、活跃、非活跃、联动、压缩、可清除、交换空间、压力状态和最近趋势。
-- 磁盘：本地卷容量、整机读写速率和最近趋势；I/O 不可用时独立降级。
-- 网络：主接口状态、上下行速率、会话累计流量和最近趋势。
-- 菜单栏：简洁、标准、完整三档密度，支持模块显隐与拖拽排序。
-- 运行控制：自适应刷新、暂停/继续、登录时启动、活动监视器快捷入口和恢复入口。
-- 辅助功能：简体中文、英文、VoiceOver、浅色/深色和高对比度界面。
+- CPU: total, user, and system usage, logical-core count, load averages, and recent trends.
+- Memory: used, available, active, inactive, wired, compressed, purgeable, swap, pressure, and recent trends.
+- Disk: local-volume capacity, aggregate read/write rates, and recent trends, with independent I/O degradation.
+- Network: primary-interface status, download/upload rates, session totals, and recent trends.
+- Menu bar: Compact, Standard, and Complete densities with module visibility and drag-to-reorder controls.
+- Runtime controls: adaptive refresh, pause/resume, launch at login, Activity Monitor shortcut, and recovery entry point.
+- Accessibility: English, Simplified Chinese, VoiceOver, light/dark appearance, and increased contrast.
 
-## 隐私与资源边界
+## Privacy and resource boundaries
 
-- App Sandbox，无管理员权限、特权 Helper、完全磁盘访问或辅助功能权限。
-- 只使用公开 Mach、BSD、Foundation、IOKit、Network、SystemConfiguration 和 ServiceManagement API。
-- 不创建账户，不包含广告、分析、遥测或第三方运行时依赖，不建立外部网络连接。
-- 指标只在本机内存中处理；历史数据使用固定容量环形缓冲区，退出应用即清除。
-- 趋势图使用 SwiftUI `Shape` / `Path` 绘制，绘制前压缩到最多 60 点并保留局部峰谷。
-- 面板隐藏时释放完整快照和图表历史的展示状态，避免图形界面产生持续性内存占用。
+- App Sandbox with no administrator access, privileged helper, Full Disk Access, or Accessibility permission.
+- Uses only public Mach, BSD, Foundation, IOKit, Network, SystemConfiguration, and ServiceManagement APIs.
+- No accounts, ads, analytics, telemetry, third-party runtime dependencies, or external network connections.
+- Metrics are processed in memory only. History uses fixed-capacity ring buffers and is cleared when the app exits.
+- Trends use SwiftUI `Shape` / `Path` and are reduced to at most 60 rendered points while preserving local extrema.
+- Hiding the dashboard releases full snapshots and chart presentation state to prevent persistent graphics memory use.
 
-详见[隐私政策](doc/PRIVACY.md)和[技术架构](doc/TS/PulseBar_Technical_Architecture_v1.0.md)。
+See the [Privacy Policy](doc/en/PRIVACY.md) and [Technical Architecture](doc/en/TS/PulseBar_Technical_Architecture_v1.0.md).
 
-## 开发环境
+## Development requirements
 
-- Xcode 26 或兼容的 Swift 6 工具链。
-- macOS 13 SDK 或更高版本。
-- 构建不依赖第三方包或联网下载。
+- Xcode 26 or a compatible Swift 6 toolchain.
+- macOS 13 SDK or later.
+- Builds require no third-party package download or network access.
 
-## 构建与测试
+## Build and test
 
 ```bash
 swift test
@@ -39,54 +41,54 @@ xcodebuild -project PulseBar.xcodeproj -scheme PulseBar -configuration Debug bui
 Scripts/verify-release.sh
 ```
 
-`Scripts/verify-release.sh` 是本地正式发布门禁，覆盖单元测试、本地化与隐私资源、性能基准、Debug/Release 构建、签名与沙盒、运行时依赖、离线边界、系统 API 探针和仓库卫生。
+`Scripts/verify-release.sh` is the formal local release gate. It covers unit tests, localization and privacy resources, collector benchmarks, Debug/Release builds, signing and sandbox checks, runtime dependencies, offline boundaries, the sandboxed system-API probe, and repository hygiene.
 
-## 本地 Release 包
+## Local Release package
 
 ```bash
-Scripts/package-local-release.sh             # 输出到 dist/
-Scripts/package-local-release.sh --launch    # 打包后启动新版应用
-Scripts/package-local-release.sh --verify    # 打包前执行完整发布门禁
+Scripts/package-local-release.sh             # Write artifacts to dist/
+Scripts/package-local-release.sh --launch    # Relaunch the packaged build
+Scripts/package-local-release.sh --verify    # Run the full gate first
 ```
 
-脚本生成 `arm64 + x86_64` Universal、ad-hoc 签名的 `.app` 和 ZIP，校验签名、沙盒、资源、架构、依赖及解压产物。产物名称包含版本号和 Git 提交号；工作区存在未提交改动时附加 `-dirty`。
+The script produces an `arm64 + x86_64` Universal, ad-hoc signed `.app` and ZIP. It validates architecture, signing, sandboxing, resources, dependencies, and the extracted archive. Artifact names include the version and Git revision; dirty worktrees receive a `-dirty` suffix.
 
-本地产物用于开发验证，不等同于 Apple 发行签名、公证、TestFlight 或 App Store 审核。
+Local packages are development artifacts. They are not equivalent to Apple distribution signing, notarization, TestFlight, or App Store approval.
 
-## 性能与长稳验证
+## Performance and soak testing
 
 ```bash
 Scripts/benchmark-metrics.sh 120
-Scripts/soak-test.sh 28800 30   # 8 小时，30 秒采样
-Scripts/soak-test.sh 86400 60   # 24 小时，60 秒采样
+Scripts/soak-test.sh 28800 30   # 8 hours, sample every 30 seconds
+Scripts/soak-test.sh 86400 60   # 24 hours, sample every 60 seconds
 ```
 
-长稳脚本必须显式提供时长和采样间隔，避免误启动长时间任务。当前验证证据和仍需执行的发行矩阵见[质量与验证报告](doc/QUALITY_REPORT.md)及[发布清单](doc/RELEASE_CHECKLIST.md)。
+The soak script requires an explicit duration and sample interval. See the [Quality and Validation Report](doc/en/QUALITY_REPORT.md) and [Release Checklist](doc/en/RELEASE_CHECKLIST.md) for current evidence and the remaining distribution matrix.
 
-## 项目结构
+## Project structure
 
-- `PulseBar/App`：应用生命周期、全局状态和菜单栏入口。
-- `PulseBar/Monitoring`：采集器、采样协调器、快照、历史与趋势压缩。
-- `PulseBar/Platform`：公开系统 API 适配层。
-- `PulseBar/Features`：监控面板、菜单栏、设置、首次启动与恢复界面。
-- `PulseBar/Resources`：图标、本地化和隐私清单。
-- `PulseBarTests`：采集、调度、历史、格式化和设置单元测试。
-- `Tools` / `Scripts`：API 探针、性能、沙盒、长稳、打包与发布验证。
+- `PulseBar/App`: application lifecycle, global state, and menu bar entry point.
+- `PulseBar/Monitoring`: collectors, sampling coordinator, snapshots, history, and trend reduction.
+- `PulseBar/Platform`: public system-API adapters.
+- `PulseBar/Features`: dashboard, menu bar, settings, onboarding, and recovery UI.
+- `PulseBar/Resources`: app icon, localization, and privacy manifest.
+- `PulseBarTests`: collector, scheduling, history, formatting, and settings tests.
+- `Tools` / `Scripts`: API probes, performance, sandbox, soak, packaging, and release verification.
 
-## 正式文档
+## Formal documentation
 
-- [产品需求文档（PRD）](doc/PRD/PulseBar_PRD_v1.0.md)
-- [技术架构文档（TS）](doc/TS/PulseBar_Technical_Architecture_v1.0.md)
-- [实施基线与里程碑](doc/IMPLEMENTATION_PLAN.md)
-- [系统指标 API 可用性报告](doc/TS/Milestone_0_API_Availability_Report.md)
-- [质量与验证报告](doc/QUALITY_REPORT.md)
-- [发布清单](doc/RELEASE_CHECKLIST.md)
-- [App Store 元数据](doc/APP_STORE_METADATA.md)
-- [隐私政策](doc/PRIVACY.md)
-- [支持与已知限制](doc/SUPPORT.md)
+- [Product Requirements Document (PRD)](doc/en/PRD/PulseBar_PRD_v1.0.md)
+- [Technical Architecture (TS)](doc/en/TS/PulseBar_Technical_Architecture_v1.0.md)
+- [Implementation Baseline and Milestones](doc/en/IMPLEMENTATION_PLAN.md)
+- [System Metrics API Availability Report](doc/en/TS/Milestone_0_API_Availability_Report.md)
+- [Quality and Validation Report](doc/en/QUALITY_REPORT.md)
+- [Release Checklist](doc/en/RELEASE_CHECKLIST.md)
+- [App Store Metadata](doc/en/APP_STORE_METADATA.md)
+- [Privacy Policy](doc/en/PRIVACY.md)
+- [Support and Known Limitations](doc/en/SUPPORT.md)
 
-## 支持与反馈
+## Support
 
-请通过 [GitHub Issues](https://github.com/xiaolin0429/PulseBar/issues) 提交问题或建议，并先阅读[支持与已知限制](doc/SUPPORT.md)。请勿在公开 Issue 中提交令牌、密码、会话信息或其他敏感数据。
+Open a request through [GitHub Issues](https://github.com/xiaolin0429/PulseBar/issues) after reviewing [Support and Known Limitations](doc/en/SUPPORT.md). Never include tokens, passwords, session information, or other sensitive data in a public issue.
 
-v1.1 规划中的告警、通知、长期历史和导出不属于 v1.0 正式范围。
+Alerts, notifications, persistent history, and export are planned beyond v1.0 and are not part of the current formal scope.

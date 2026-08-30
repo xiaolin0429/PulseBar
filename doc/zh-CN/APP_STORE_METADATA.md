@@ -1,34 +1,35 @@
+[English](../en/APP_STORE_METADATA.md) | 简体中文
+
 # PulseBar v1.0 App Store 提交元数据
 
 更新日期：2026-08-31
 适用版本：1.0.0（Build 1）
+本地化：简体中文
 
-本文档是 App Store Connect 的正式文案基线。提交人仍须使用最终归档核对版本、签名、隐私报告、年龄分级和截图。
+本文档是 App Store Connect 简体中文本地化的正式文案基线。提交人仍须使用最终归档核对版本、签名、隐私报告、年龄分级和截图。
 
 ## 基本信息
 
-| 字段 | 简体中文 | English |
-|---|---|---|
-| 名称 | PulseBar | PulseBar |
-| 副标题 | 菜单栏中的轻量系统监控 | Lightweight Menu Bar Monitor |
-| 主分类 | 工具 | Utilities |
-| 价格 | 免费 | Free |
-| 隐私标签 | 不收集数据 | Data Not Collected |
-| 最低系统 | macOS 13 | macOS 13 |
+| 字段 | 内容 |
+|---|---|
+| 名称 | PulseBar |
+| 副标题 | 菜单栏中的轻量系统监控 |
+| 主分类 | 工具 |
+| 价格 | 免费 |
+| 隐私标签 | 不收集数据 |
+| 最低系统 | macOS 13 |
 
 ## 对外链接
 
 - 营销 URL：<https://github.com/xiaolin0429/PulseBar>
 - 支持 URL：<https://github.com/xiaolin0429/PulseBar/issues>
-- 隐私政策 URL：<https://github.com/xiaolin0429/PulseBar/blob/main/doc/PRIVACY.md>
+- 隐私政策 URL：<https://github.com/xiaolin0429/PulseBar/blob/main/doc/zh-CN/PRIVACY.md>
 
 ## 宣传文本
 
-中文：一眼查看 CPU、内存、磁盘和网络。完全本地，无广告、无账户、无需管理员权限。
+一眼查看 CPU、内存、磁盘和网络。完全本地，无广告、无账户、无需管理员权限。
 
-English: See CPU, memory, disk, and network status at a glance—fully local, ad-free, account-free, and without administrator access.
-
-## 中文描述
+## 应用描述
 
 PulseBar 是一款小巧、原生的 macOS 菜单栏系统监控工具。
 
@@ -44,28 +45,11 @@ PulseBar 是一款小巧、原生的 macOS 菜单栏系统监控工具。
 - 自适应刷新、简体中文、英文和 VoiceOver；
 - 完全本地，不收集数据，不建立外部网络连接。
 
-## English description
-
-PulseBar is a focused, native system monitor for the macOS menu bar.
-
-One compact menu bar item keeps CPU, memory, disk, and network status visible. Click it for recent trends, CPU and memory breakdowns, local-volume capacity, disk I/O, primary-network status, and session traffic. Compact, Standard, and Complete densities fit different menu bar layouts.
-
-Highlights:
-
-- total, user, and system CPU usage, logical cores, and load averages;
-- memory usage, availability, compression, swap, and pressure;
-- local-volume capacity and disk read/write rates;
-- primary-network status and download/upload rates;
-- 60-second, 2-minute, or 5-minute in-memory trends;
-- adaptive refresh, Simplified Chinese, English, and VoiceOver;
-- fully local operation with no data collection or external network access.
-
 ## 关键词
 
-- 中文：`系统监控,菜单栏,CPU,内存,磁盘,网络,性能`
-- English: `system monitor,menu bar,CPU,memory,disk,network,performance`
+`系统监控,菜单栏,CPU,内存,磁盘,网络,性能`
 
-关键词须在 App Store Connect 字符限制内再次校验；中文与英文分别填写，不混用本地化字段。
+关键词须在 App Store Connect 字符限制内再次校验。
 
 ## 截图规格与内容
 

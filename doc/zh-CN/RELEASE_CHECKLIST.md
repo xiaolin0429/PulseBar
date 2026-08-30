@@ -1,3 +1,5 @@
+[English](../en/RELEASE_CHECKLIST.md) | 简体中文
+
 # PulseBar v1.0 发布清单
 
 更新日期：2026-08-31

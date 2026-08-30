@@ -1,3 +1,5 @@
+[English](../../en/TS/Milestone_0_API_Availability_Report.md) | 简体中文
+
 # PulseBar v1.0 系统指标 API 可用性报告
 
 首次验证：2026-08-29
@@ -37,9 +39,9 @@ Release 原始采集器 120 次门禁结果：
 |---|---:|---:|
 | CPU raw | 0.01 ms | 3 ms |
 | Memory raw | 0.00 ms | 3 ms |
-| Network counters | 0.01 ms | 3 ms |
+| Network counters | 0.02 ms | 3 ms |
 | Disk I/O counters | 0.04 ms | 8 ms |
-| Volume capacity（低频） | 0.02 ms | 20 ms |
+| Volume capacity（低频） | 0.01 ms | 20 ms |
 
 数值是当前设备上的可复现观察，不构成所有设备的绝对性能承诺。卷列表与容量位于低频路径，不随每秒快照重复枚举。
 
