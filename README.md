@@ -23,7 +23,7 @@ The current formal baseline is **v1.0.0 (Build 1)** and requires **macOS 13 or l
 - No accounts, ads, analytics, telemetry, third-party runtime dependencies, or external network connections.
 - Metrics are processed in memory only. History uses fixed-capacity ring buffers and is cleared when the app exits.
 - Trends use SwiftUI `Shape` / `Path` and are reduced to at most 60 rendered points while preserving local extrema.
-- Hiding the dashboard releases full snapshots and chart presentation state to prevent persistent graphics memory use.
+- When the menu-bar popover enters its hidden lifecycle, it clears full snapshots and chart presentation state. Post-close CPU and memory recovery for the standalone dashboard window is still being optimized; see the [Quality Report](doc/en/QUALITY_REPORT.md).
 
 See the [Privacy Policy](doc/en/PRIVACY.md) and [Technical Architecture](doc/en/TS/PulseBar_Technical_Architecture_v1.0.md).
 

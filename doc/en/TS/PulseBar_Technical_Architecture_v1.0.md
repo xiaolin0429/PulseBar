@@ -358,13 +358,15 @@ The application does not link `Charts.framework`, avoiding the former 134–140 
 
 ### 11.3 Dashboard hides
 
+The following cleanup depends on `DashboardView.onDisappear` notifying `AppModel` of the visibility change:
+
 - `DashboardPresentationState.hide()` replaces content with empty state.
 - `DashboardView` replaces the card tree with a same-size `Color.clear` shell.
 - Adaptive sampling moves to two seconds.
 - Fixed-capacity history continues, but arrays are not materialized for UI.
 - The menu bar continues through the lightweight summary.
 
-This breaks Dashboard ownership of snapshot arrays, chart Shapes, and SwiftUI render layers without requiring process exit.
+This path is intended to break Dashboard ownership of snapshot arrays, chart Shapes, and SwiftUI render layers. The 2026-08-31 hardware matrix confirms 0.290% CPU / 16.5 MiB footprint for the cold menu-bar background state, but the standalone `NSWindow` remains at 2.745% / 38.9 MiB after close. That window is retained by `AppDelegate` with `isReleasedWhenClosed = false`; its close path does not currently meet this section's design target and must be fixed before acceptance.
 
 ## 12. Menu bar rendering
 
@@ -527,8 +529,8 @@ The repository currently has no hosted CI workflow. These scripts are the canoni
 | Collector performance budget | Passed |
 | 120-second visible-chart memory budget | Passed |
 | Five-minute steady state | Passed |
-| Hidden-state low CPU | Passed |
-| Hidden-dashboard resource-release mechanism | Implemented; settled unlocked hardware value pending |
+| Hidden-state low CPU | Cold menu-bar-only state passes; standalone-window post-close state fails (final-20-second average 2.745%) |
+| Hidden-dashboard resource-release mechanism | Code mechanism implemented; standalone-window post-close footprint remains 38.9 MiB instead of the 16.5 MiB cold baseline |
 | macOS 13/14/15 and Intel matrix | Pending |
 | 8/24-hour and Instruments | Pending |
 | Apple distribution signing, notarization, TestFlight/App Store | Pending |

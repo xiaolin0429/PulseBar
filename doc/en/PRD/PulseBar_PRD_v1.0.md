@@ -384,7 +384,7 @@ Requirements:
 | AC-08 | Definition expansion moves card and chart smoothly together | Implemented and hardware-regressed |
 | AC-09 | Sandbox, no external connection, and no collection boundaries hold | Local gate passed |
 | AC-10 | Visible graphics stay below 60 MB and five-minute growth below 10 MB | Passed on current hardware |
-| AC-11 | Hidden dashboard releases full presentation resources and reaches target recovery | Mechanism implemented; settled hardware value pending |
+| AC-11 | Hidden dashboard releases full presentation resources and reaches target recovery | Standalone-window hardware result fails: post-close CPU averages 2.745% and footprint 38.9 MiB instead of the 0.290% / 16.5 MiB cold baseline |
 | AC-12 | 8-hour, OS/device matrix, and Apple distribution chain | Distribution-stage pending |
 
 ## 16. Version and distribution status

@@ -70,12 +70,15 @@ Scripts/package-local-release.sh --verify
 
 - [x] 图形可见 120 秒峰值低于 60 MB，末值 35,665 KB。
 - [x] 五分钟稳态峰值 33,873 KB，增长 368 KB，无崩溃和外部 socket。
-- [x] 面板关闭时 60 秒 CPU 平均 0.280%，峰值 0.7%。
+- [x] 冷启且从未打开卡片时，20 秒 CPU 平均 0.290%，峰值 0.607%，满足隐藏态低于 1% 的目标。
+- [x] 已记录前台静置、快速滚动/展开、窗口拖动、被其他应用覆盖、关闭后稳定和重启恢复的 CPU/footprint 矩阵。
 - [x] 隐藏面板会清除完整快照/历史展示状态并卸载完整卡片树。
-- [ ] 真机解锁状态复测首次打开、关闭并稳定后的 physical footprint 回落。
+- [ ] 独立卡片关闭路径需修复：最后 20 秒 CPU 平均 2.745%，physical footprint 平均 38.9 MiB，未回到 0.290% / 16.5 MiB 冷启基线。
+- [ ] 使用 Time Profiler 复核常规快速交互的 13.973% CPU 峰值；AX 压力上界 25.310% 不作为普通鼠标场景。
+- [ ] 默认菜单栏弹出式卡片按同一 `proc_pid_rusage` 口径完成打开、关闭和稳定复测。
 - [ ] 8 小时默认自适应：`Scripts/soak-test.sh 28800 30`。
 - [ ] 24 小时默认自适应：`Scripts/soak-test.sh 86400 60`。
-- [ ] 面板关闭和打开分别记录 CPU、physical footprint、Energy Impact 与 Idle Wake Ups。
+- [ ] 使用 Instruments 补充卡片关闭和打开时的 Energy Impact、Idle Wake Ups、Allocations 与存活对象证据。
 - [ ] 1 秒、2 秒、5 秒策略分别使用 Instruments Energy Log 验证。
 - [ ] 接电和电池环境各执行一次关键能耗场景。
 - [ ] Xcode Leaks / Allocations 检查 Mach、IOKit、`getifaddrs` 和图形资源生命周期。

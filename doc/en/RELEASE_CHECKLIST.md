@@ -70,12 +70,15 @@ Reconfirm on the final candidate:
 
 - [x] Visible chart run stays below 60 MB for 120 seconds; last sample 35,665 KB.
 - [x] Five-minute steady state peaks at 33,873 KB and grows 368 KB, with no crash or external socket.
-- [x] Dashboard-hidden 60-second CPU averages 0.280% and peaks at 0.7%.
+- [x] A cold process that never opened the dashboard averages 0.290% CPU and peaks at 0.607% over 20 seconds, passing the below-1% hidden-state target.
+- [x] CPU/footprint matrix recorded for foreground static, rapid scroll/expand, window drag, covered window, post-close settling, and relaunch recovery.
 - [x] Hiding the dashboard clears full snapshot/history presentation state and unloads the full card tree.
-- [ ] While unlocked, repeat first open, close, and settled physical-footprint recovery.
+- [ ] Fix the standalone-dashboard close path: the final 20 seconds average 2.745% CPU and 38.9 MiB physical footprint instead of returning to the 0.290% / 16.5 MiB cold baseline.
+- [ ] Review the 13.973% normal rapid-interaction CPU peak with Time Profiler; the 25.310% AX stress upper bound is not ordinary mouse use.
+- [ ] Run open, close, and settled measurements for the default menu-bar popover with the same `proc_pid_rusage` definition.
 - [ ] 8-hour adaptive run: `Scripts/soak-test.sh 28800 30`.
 - [ ] 24-hour adaptive run: `Scripts/soak-test.sh 86400 60`.
-- [ ] Record CPU, physical footprint, Energy Impact, and Idle Wake Ups with the dashboard hidden and visible.
+- [ ] Use Instruments to add Energy Impact, Idle Wake Ups, Allocations, and live-object evidence with the dashboard hidden and visible.
 - [ ] Validate 1 s, 2 s, and 5 s policies with Instruments Energy Log.
 - [ ] Run key energy scenarios on AC power and battery.
 - [ ] Use Xcode Leaks / Allocations to inspect Mach, IOKit, `getifaddrs`, and graphics lifetimes.

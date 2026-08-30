@@ -352,13 +352,15 @@ I/O 失败时 `DiskSnapshot` 仍携带容量，`ioState` 独立标记不可用�
 
 ### 11.3 面板隐藏
 
+以下清理依赖 `DashboardView.onDisappear` 将可见性通知给 `AppModel`：
+
 - `DashboardPresentationState.hide()` 将内容替换为空。
 - `DashboardView` 用同尺寸 `Color.clear` 壳替换卡片树。
 - 自适应策略切换为两秒。
 - 历史继续固定容量写入，但不物化数组给 UI。
 - 菜单栏继续接收轻量摘要。
 
-该路径解除 Dashboard 对快照数组、图形 Shape 和 SwiftUI 渲染层的持有，不依赖进程退出释放资源。
+该路径用于解除 Dashboard 对快照数组、图形 Shape 和 SwiftUI 渲染层的持有。2026-08-31 真机矩阵确认菜单栏冷后台达到 0.290% CPU / 16.5 MiB footprint，但独立 `NSWindow` 关闭后仍为 2.745% / 38.9 MiB。该独立窗口由 `AppDelegate` 持有且 `isReleasedWhenClosed = false`，关闭路径当前未达到本节设计目标，必须修复后再验收。
 
 ## 12. 菜单栏渲染
 
@@ -521,8 +523,8 @@ App、Features 和 Resources 不进入核心 target，使采集算法可在无 U
 | 采集性能预算 | 通过 |
 | 图形 120 秒内存预算 | 通过 |
 | 五分钟稳态 | 通过 |
-| 隐藏态低 CPU | 通过 |
-| 隐藏面板资源释放机制 | 已实现；终态回落数值待解锁真机验收 |
+| 隐藏态低 CPU | 冷启仅菜单栏通过；独立窗口关闭后未通过（最后 20 秒平均 2.745%） |
+| 隐藏面板资源释放机制 | 代码机制已实现；独立窗口关闭后 footprint 仍为 38.9 MiB，未回到 16.5 MiB 冷启基线 |
 | macOS 13/14/15 与 Intel 矩阵 | 待验证 |
 | 8/24 小时与 Instruments | 待验证 |
 | Apple 发行签名、公证、TestFlight/App Store | 待执行 |
