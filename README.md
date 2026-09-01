@@ -6,6 +6,15 @@ PulseBar is a native, lightweight system monitor for the macOS menu bar. A singl
 
 The current formal baseline is **v1.0.0 (Build 1)** and requires **macOS 13 or later**.
 
+## Preview
+
+<p align="center">
+  <img src="doc/assets/screenshots/dashboard-en.png" alt="PulseBar dashboard showing live CPU and memory trends" height="360">
+  <img src="doc/assets/screenshots/menu-bar-settings-en.png" alt="PulseBar menu bar preview and module settings" height="360">
+</p>
+
+<p align="center"><sub>Live system trends in a focused dashboard, with compact menu-bar controls that stay out of the way.</sub></p>
+
 ## Core capabilities
 
 - CPU: total, user, and system usage, logical-core count, load averages, and recent trends.

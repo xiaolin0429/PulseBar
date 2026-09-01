@@ -6,6 +6,15 @@ PulseBar 是一款原生、轻量的 macOS 菜单栏系统监控工具。它使�
 
 当前正式基线为 **v1.0.0（Build 1）**，最低支持 **macOS 13**。
 
+## 产品预览
+
+<p align="center">
+  <img src="doc/assets/screenshots/dashboard-zh-CN.png" alt="PulseBar 监控面板，展示实时 CPU 与内存趋势" height="360">
+  <img src="doc/assets/screenshots/menu-bar-settings-zh-CN.png" alt="PulseBar 菜单栏实时预览与模块设置" height="360">
+</p>
+
+<p align="center"><sub>用聚焦的监控卡片查看实时趋势，以紧凑菜单栏控件保持低打扰。</sub></p>
+
 ## 核心能力
 
 - CPU：总占用、用户/系统占用、逻辑核心数、负载平均值和最近趋势。
