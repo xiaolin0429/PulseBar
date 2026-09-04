@@ -10,8 +10,9 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  # Keep every main commit eligible for release, even when merges arrive quickly.
+  group: ci-${{ github.ref == 'refs/heads/main' && github.sha || github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   build-test:
@@ -19,7 +20,10 @@ jobs:
     runs-on: macos-26
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
-    timeout-minutes: 20
+    timeout-minutes: 30
+    outputs:
+      release-tag: ${{ steps.package.outputs.tag }}
+      release-version: ${{ steps.package.outputs.version }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
@@ -36,3 +40,86 @@ jobs:
         run: |
           for script in Scripts/*.sh; do bash -n "$script"; done
           git diff --check
+      - name: Package and validate the Universal release
+        id: package
+        shell: bash
+        run: |
+          test -z "$(git status --porcelain --untracked-files=normal)"
+          Scripts/package-local-release.sh --output-dir "$RUNNER_TEMP/PulseBar-release"
+          cd "$RUNNER_TEMP/PulseBar-release"
+          version="$(plutil -extract CFBundleShortVersionString raw PulseBar.app/Contents/Info.plist)"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          shasum -a 256 ./*.zip > SHA256SUMS.txt
+          shasum -a 256 -c SHA256SUMS.txt
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v${version}-${GITHUB_SHA:0:12}" >> "$GITHUB_OUTPUT"
+      - name: Upload release assets
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: macos-universal-release
+          path: |
+            ${{ runner.temp }}/PulseBar-release/*.zip
+            ${{ runner.temp }}/PulseBar-release/SHA256SUMS.txt
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+          overwrite: true
+
+  release:
+    name: Publish GitHub Release
+    needs: build-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Download the verified assets from this run
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: macos-universal-release
+          path: release-assets
+      - name: Publish assets for the exact main commit
+        shell: bash
+        working-directory: release-assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ needs.build-test.outputs.release-tag }}
+          RELEASE_VERSION: ${{ needs.build-test.outputs.release-version }}
+        run: |
+          sha256sum -c SHA256SUMS.txt
+          # Listing includes drafts, so a failed upload can resume on a rerun.
+          release_state="$(gh api --paginate "repos/$GH_REPO/releases?per_page=100" \
+            --jq '.[] | [.tag_name, .draft] | @tsv' \
+            | awk -F '\t' -v tag="$RELEASE_TAG" '$1 == tag { print $2 }')"
+          if [[ "$release_state" == "false" ]]; then
+            echo "Release $RELEASE_TAG is already published; keeping its original assets."
+            exit 0
+          fi
+          if [[ -z "$release_state" ]]; then
+            cat > "$RUNNER_TEMP/release-notes.md" <<EOF
+          Automated build from main commit $GITHUB_SHA.
+
+          Download the macOS Universal ZIP for Apple Silicon and Intel Macs (macOS 13+).
+          Verify the download with SHA256SUMS.txt.
+
+          This build uses ad-hoc signing with App Sandbox and hardened runtime.
+          It is not Developer ID signed or notarized by Apple; macOS may block opening it.
+          Automated build checks do not replace the remaining release checklist or product acceptance.
+          EOF
+            gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" \
+              --title "PulseBar $RELEASE_VERSION (${GITHUB_SHA:0:12})" \
+              --notes-file "$RUNNER_TEMP/release-notes.md" --generate-notes --draft
+          elif [[ "$release_state" != "true" ]]; then
+            echo "::error::Unexpected release state: $release_state"
+            exit 1
+          fi
+          gh release upload "$RELEASE_TAG" ./*.zip SHA256SUMS.txt --clobber
+          # An older, slower build must not replace the current main build as Latest.
+          main_sha="$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq '.object.sha')"
+          latest=false
+          if [[ "$main_sha" == "$GITHUB_SHA" ]]; then latest=true; fi
+          gh release edit "$RELEASE_TAG" --draft=false --latest="$latest"
+          echo "Published [$RELEASE_TAG]($GITHUB_SERVER_URL/$GH_REPO/releases/tag/$RELEASE_TAG)" >> "$GITHUB_STEP_SUMMARY"

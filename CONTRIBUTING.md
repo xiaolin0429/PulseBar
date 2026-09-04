@@ -19,6 +19,8 @@ The required checks are **Branch flow**, **Build and test**, **Dependency review
 
 Code scanning results are additionally enforced through the GitHub ruleset. Never remove a failing check, change its name, or weaken the policy just to merge. Changes to `.github/workflows/` should be reviewed carefully even though a second human approval is not mandatory. GitHub administrators can still edit repository rules; this is not an immutable organizational policy.
 
+After `dev -> main` merges, CI packages and publishes a commit-specific GitHub Release automatically. The existing **Build and test** check also validates Universal packaging before merging. See [Automatic GitHub Releases](README.md#automatic-github-releases) for artifacts, tags, signing limits, and retries.
+
 ## Synchronize after a release
 
 Keep merge commits so ancestry is preserved. A release PR creates a merge commit on `main`; bring it back through a feature PR instead of pushing to `dev`:
