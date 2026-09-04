@@ -68,12 +68,21 @@ jobs:
         # CodeQL requires real compiler invocations, without Xcode's integrated
         # Swift driver or compilation caches (see GitHub's prepare-code guide).
         run: |
+          # Report process names only, never their arguments or environment.
+          # This makes a stalled compiler/extractor diagnosable in hosted CI.
+          (
+            while sleep 60; do
+              ps -axo pid,ppid,%cpu,etime,comm | awk 'NR == 1 || /swift|codeql|xcodebuild/'
+            done
+          ) &
+          diagnostic_pid=$!
+          trap 'kill "$diagnostic_pid" 2>/dev/null || true' EXIT
           xcodebuild -project PulseBar.xcodeproj -scheme PulseBar \
-            -configuration Debug -destination 'generic/platform=macOS' \
+            -configuration Debug -destination 'platform=macOS,arch=x86_64' \
             -derivedDataPath "$RUNNER_TEMP/PulseBar-CodeQL" \
             CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
             COMPILATION_CACHE_ENABLE_CACHING=NO SWIFT_ENABLE_COMPILE_CACHE=NO \
-            SWIFT_USE_INTEGRATED_DRIVER=NO clean build
+            SWIFT_USE_INTEGRATED_DRIVER=NO ONLY_ACTIVE_ARCH=YES clean build
           swift build
       - name: Analyze and publish security findings
         uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
