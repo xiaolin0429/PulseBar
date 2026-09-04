@@ -37,7 +37,9 @@ jobs:
         include:
           - language: swift
             label: Swift
-            runner: macos-26
+            # CodeQL's Apple Silicon support is beta; use the standard Intel
+            # runner for extraction while CI builds/tests natively on arm64.
+            runner: macos-26-intel
             build-mode: manual
           - language: actions
             label: Actions
