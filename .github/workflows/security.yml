@@ -63,11 +63,15 @@ jobs:
           queries: security-extended
       - name: Build Swift application and tools for analysis
         if: matrix.language == 'swift'
+        # CodeQL requires real compiler invocations, without Xcode's integrated
+        # Swift driver or compilation caches (see GitHub's prepare-code guide).
         run: |
-          xcodebuild -quiet -project PulseBar.xcodeproj -scheme PulseBar \
+          xcodebuild -project PulseBar.xcodeproj -scheme PulseBar \
             -configuration Debug -destination 'generic/platform=macOS' \
             -derivedDataPath "$RUNNER_TEMP/PulseBar-CodeQL" \
-            CODE_SIGNING_ALLOWED=NO clean build
+            CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
+            COMPILATION_CACHE_ENABLE_CACHING=NO SWIFT_ENABLE_COMPILE_CACHE=NO \
+            SWIFT_USE_INTEGRATED_DRIVER=NO clean build
           swift build
       - name: Analyze and publish security findings
         uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
