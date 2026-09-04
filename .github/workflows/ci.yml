@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev, main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: Build and test
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Core tests and probe builds
+        run: swift test
+      - name: Compile the complete macOS app
+        run: >-
+          xcodebuild -quiet -project PulseBar.xcodeproj -scheme PulseBar
+          -configuration Debug -destination 'generic/platform=macOS'
+          -derivedDataPath "$RUNNER_TEMP/PulseBar-CI"
+          CODE_SIGNING_ALLOWED=NO build
+      - name: Validate shell scripts and whitespace
+        run: |
+          for script in Scripts/*.sh; do bash -n "$script"; done
+          git diff --check

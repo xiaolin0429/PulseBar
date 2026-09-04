@@ -1,0 +1,41 @@
+name: Branch policy
+
+# Only read event metadata from the trusted base-branch workflow. Never check out
+# or execute pull-request code in this pull_request_target workflow.
+on:
+  pull_request_target:
+    branches: [dev, main]
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  branch-flow:
+    name: Branch flow
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Enforce feat to dev and dev to main
+        shell: python
+        run: |
+          import json
+          import os
+          import sys
+
+          with open(os.environ['GITHUB_EVENT_PATH'], encoding='utf-8') as event_file:
+              event = json.load(event_file)
+          pr = event['pull_request']
+          base = pr['base']['ref']
+          head = pr['head']['ref']
+          source_repo = (pr['head'].get('repo') or {}).get('full_name')
+          target_repo = event['repository']['full_name']
+          allowed = (
+              base == 'dev' and head.startswith('feat/') and len(head) > len('feat/')
+          ) or (
+              base == 'main' and head == 'dev' and source_repo == target_repo
+          )
+          if not allowed:
+              print('::error::Only feat/* -> dev and this repository dev -> main are allowed.')
+              sys.exit(1)
+          print('PASS: pull request follows the integration branch policy.')

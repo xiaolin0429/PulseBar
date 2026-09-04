@@ -1,5 +1,7 @@
 [English](README.md) | 简体中文
 
+[贡献与分支管理流程](CONTRIBUTING.zh-CN.md) · `feat/* → dev → main`
+
 # PulseBar
 
 PulseBar 是一款原生、轻量的 macOS 菜单栏系统监控工具。它使用一个紧凑的菜单栏项目展示 CPU、内存、磁盘和网络状态；点击后可查看指标拆分、最近趋势与数据口径。

@@ -1,0 +1,99 @@
+name: Security review
+
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev, main]
+  schedule:
+    - cron: '23 2 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: low
+          fail-on-scopes: runtime, development, unknown
+          license-check: false
+          comment-summary-in-pr: never
+
+  codeql:
+    name: CodeQL (${{ matrix.label }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: swift
+            label: Swift
+            runner: macos-15
+            build-mode: manual
+          - language: actions
+            label: Actions
+            runner: ubuntu-latest
+            build-mode: none
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          queries: security-extended
+      - name: Build Swift application and tools for analysis
+        if: matrix.language == 'swift'
+        run: |
+          xcodebuild -quiet -project PulseBar.xcodeproj -scheme PulseBar \
+            -configuration Debug -destination 'generic/platform=macOS' \
+            -derivedDataPath "$RUNNER_TEMP/PulseBar-CodeQL" \
+            CODE_SIGNING_ALLOWED=NO clean build
+          swift build
+      - name: Analyze and publish security findings
+        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          category: /language:${{ matrix.language }}
+          output: ${{ runner.temp }}/codeql-results
+          wait-for-processing: true
+      # A successful SARIF upload alone does not mean that the scan found no
+      # vulnerabilities. Fail this required check when it reports findings.
+      - name: Reject CodeQL findings
+        env:
+          SARIF_DIRECTORY: ${{ runner.temp }}/codeql-results
+        shell: python
+        run: |
+          import glob
+          import json
+          import os
+          import sys
+
+          files = glob.glob(os.path.join(os.environ['SARIF_DIRECTORY'], '*.sarif'))
+          if not files:
+              print('::error::No CodeQL SARIF result was produced.')
+              sys.exit(1)
+          count = 0
+          for path in files:
+              with open(path, encoding='utf-8') as report:
+                  for run in json.load(report).get('runs', []):
+                      count += len(run.get('results', []))
+          if count:
+              print(f'::error::CodeQL reported {count} findings. Resolve them before merging.')
+              sys.exit(1)
+          print('PASS: CodeQL reported no findings.')
