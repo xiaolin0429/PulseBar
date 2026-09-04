@@ -28,7 +28,6 @@ public struct HistoryStore: Sendable {
     private var networkDownload = RingBuffer<HistoryPoint>(capacity: 360)
     private var networkUpload = RingBuffer<HistoryPoint>(capacity: 360)
 
-    /// 创建六条固定容量历史序列，每条最多保留 360 个点。
     public init() {}
 
     /// 把快照中可取出的指标写入环形缓存；预热、不可用和缺失速率不补零。
@@ -73,7 +72,6 @@ public struct HistoryStore: Sendable {
         )
     }
 
-    /// 复用采样序号及双时钟时间戳，使不同指标能对应同一次采样。
     private func point(_ value: Double, from snapshot: SystemSnapshot) -> HistoryPoint {
         HistoryPoint(
             sequence: snapshot.sequence,

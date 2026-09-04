@@ -9,7 +9,6 @@ public actor NetworkCollector {
     private var sessionDownloadedBytes: UInt64 = 0
     private var sessionUploadedBytes: UInt64 = 0
 
-    /// 注入接口累计计数、主接口解析和网络路径来源；会话累计量从零开始。
     public init(
         counterReader: any NetworkRawReading = BSDInterfaceCounterReader(),
         interfaceResolver: any PrimaryInterfaceResolving = SystemPrimaryInterfaceResolver(),
@@ -122,7 +121,6 @@ public actor NetworkCollector {
         return counters.sorted { interfacePriority($0.name) < interfacePriority($1.name) }.first
     }
 
-    /// 生成稳定排序键，同类接口按名称排序，避免回退选择随枚举顺序跳动。
     private func interfacePriority(_ name: String) -> String {
         let rank: Int
         if name.hasPrefix("utun") || name.hasPrefix("ipsec") || name.hasPrefix("ppp") {
@@ -135,7 +133,6 @@ public actor NetworkCollector {
         return "\(rank)-\(name)"
     }
 
-    /// 优先识别 VPN 名称，再采用网络路径类型；无法确定时对 en 接口作有线回退。
     private func interfaceKind(
         name: String,
         path: NetworkPathState
@@ -150,7 +147,6 @@ public actor NetworkCollector {
         return .other
     }
 
-    /// 构造保留接口和会话累计量的预热快照；未知速率用 nil 而不是零。
     private func snapshot(
         path: NetworkPathState,
         interface: NetworkInterfaceSnapshot,
@@ -168,7 +164,6 @@ public actor NetworkCollector {
         )
     }
 
-    /// 累计会话流量，溢出时饱和到 UInt64.max，避免无符号整数回绕。
     private func saturatingAdd(_ left: UInt64, _ right: UInt64) -> UInt64 {
         let result = left.addingReportingOverflow(right)
         return result.overflow ? UInt64.max : result.partialValue

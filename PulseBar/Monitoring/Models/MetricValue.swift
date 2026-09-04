@@ -28,14 +28,12 @@ public struct MetricFailure: Sendable, Equatable, Error {
         case sourceMissing
     }
 
-    /// 将稳定错误码、面向用户的本地化键与可选调试细节分开保存。
     public init(code: Code, userMessageKey: String, debugContext: String? = nil) {
         self.code = code
         self.userMessageKey = userMessageKey
         self.debugContext = debugContext
     }
 
-    /// 将底层读取异常包装为统一失败类型；用户提示不直接暴露底层错误文本。
     static func reading(_ error: Error, source: String) -> MetricFailure {
         MetricFailure(
             code: .systemCallFailed,

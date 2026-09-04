@@ -4,7 +4,6 @@ import Combine
 final class MenuBarPresentationState: ObservableObject {
     @Published private(set) var summary = MenuBarSummary.unavailable
 
-    /// 仅在摘要变化时触发菜单栏重绘，隔离面板历史与高频细节更新。
     func publish(_ summary: MenuBarSummary) {
         guard self.summary != summary else { return }
         self.summary = summary
@@ -32,7 +31,6 @@ final class DashboardPresentationState: ObservableObject {
         content = next
     }
 
-    /// 打开面板时先提供最近快照，沿用当前历史等待下一轮采样。
     func show(snapshot: SystemSnapshot?) {
         let next = Content(
             isVisible: true,

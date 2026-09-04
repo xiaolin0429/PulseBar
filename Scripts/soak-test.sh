@@ -18,7 +18,6 @@ samples_file="$work_root/samples.tsv"
 app_log="$work_root/PulseBar.log"
 app_pid=""
 
-# 退出时终止本脚本启动的进程并清理临时采样及日志，不触碰其他应用实例。
 cleanup() {
     if [[ -n "$app_pid" ]] && kill -0 "$app_pid" 2>/dev/null; then
         kill "$app_pid" 2>/dev/null || true

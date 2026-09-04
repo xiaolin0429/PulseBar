@@ -61,7 +61,6 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var showDockIcon = false
     public var openBehavior: AppOpenBehavior = .menuBarOnly
 
-    /// 创建默认偏好：自适应刷新、60 秒历史及 CPU/内存/网络菜单栏模块。
     public init() {}
 
     /// 去重并补齐所有模块；旧设置没有全量排序时，以原可见顺序作为兼容起点。
@@ -73,7 +72,6 @@ public struct AppSettings: Codable, Equatable, Sendable {
         return result
     }
 
-    /// 把模块移到目标的原索引位置，同时同步全量顺序与可见模块顺序。
     public mutating func moveModule(_ module: MenuBarModule, to target: MenuBarModule) {
         var order = orderedModules
         guard let sourceIndex = order.firstIndex(of: module),
@@ -85,7 +83,6 @@ public struct AppSettings: Codable, Equatable, Sendable {
         applyModuleOrder(order)
     }
 
-    /// 按相对偏移移动模块；目标越界时不修改设置。
     public mutating func moveModule(_ module: MenuBarModule, offset: Int) {
         let order = orderedModules
         guard let sourceIndex = order.firstIndex(of: module) else { return }
@@ -108,7 +105,6 @@ public struct AppSettings: Codable, Equatable, Sendable {
         return result
     }
 
-    /// 写入全量顺序，同时只重排当前已启用模块，不改变其启用状态。
     private mutating func applyModuleOrder(_ order: [MenuBarModule]) {
         moduleOrder = order
         let visibleSet = Set(visibleModules)

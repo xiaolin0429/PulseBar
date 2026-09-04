@@ -2,7 +2,6 @@
 
 set -euo pipefail
 
-# 输出本地打包选项；--launch 会重启目标产物，默认只打包不影响运行中的应用。
 usage() {
     cat <<'EOF'
 Usage: Scripts/package-local-release.sh [options]

@@ -2,11 +2,8 @@ import Darwin
 import Foundation
 
 public struct VolumeCapacityRawReader: VolumeRawReading {
-    /// 创建无状态卷容量读取器；枚举由采集器按低频策略触发。
     public init() {}
 
-    /// 枚举非隐藏挂载卷，过滤明确非本地或容量无效的条目，根卷优先排序。
-    /// 单个卷读取失败时跳过该卷，整个挂载卷列表不可获取时抛出错误。
     public func readVolumes() throws -> [RawVolumeCapacity] {
         let keys: Set<URLResourceKey> = [
             .volumeIdentifierKey,

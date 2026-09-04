@@ -5,14 +5,12 @@ public enum MetricFormatter {
         public let top: String
         public let bottom: String
 
-        /// 保存一个菜单栏列的上下两行文本；对齐由 twoLineLabel 统一处理。
         public init(top: String, bottom: String) {
             self.top = top
             self.bottom = bottom
         }
     }
 
-    /// 格式化字节容量；默认采用二进制容量口径，并将输入夹到 Int64 可表示范围。
     public static func bytes(
         _ value: UInt64,
         unitSystem: UnitSystem = .mixedDefault
@@ -23,7 +21,6 @@ public enum MetricFormatter {
         )
     }
 
-    /// 格式化 B/s；默认采用十进制速率口径，负值或非有限值显示占位符。
     public static func bytesPerSecond(
         _ value: Double,
         unitSystem: UnitSystem = .mixedDefault
@@ -33,7 +30,6 @@ public enum MetricFormatter {
         return "\(ByteCountFormatter.string(fromByteCount: Int64(value), countStyle: style))/s"
     }
 
-    /// 使用 B/K/M 等短单位格式化菜单栏容量；默认以 1024 为进位基数。
     public static func compactBytes(
         _ value: UInt64,
         unitSystem: UnitSystem = .mixedDefault
@@ -42,7 +38,6 @@ public enum MetricFormatter {
         return compactMagnitude(Double(value), base: base)
     }
 
-    /// 使用紧凑短单位格式化菜单栏 B/s；默认以 1000 进位，无效值显示占位符。
     public static func compactBytesPerSecond(
         _ value: Double,
         unitSystem: UnitSystem = .mixedDefault
@@ -98,7 +93,6 @@ public enum MetricFormatter {
         return number + suffixes[suffixIndex]
     }
 
-    /// 大于等于 10 或接近整数时显示整数，其余保留一位小数；固定小数点格式。
     private static func compactNumber(_ value: Double) -> String {
         let rounded = value.rounded()
         if value >= 10 || abs(value - rounded) < 0.05 {
@@ -107,7 +101,6 @@ public enum MetricFormatter {
         return String(format: "%.1f", locale: Locale(identifier: "en_US_POSIX"), value)
     }
 
-    /// 左右补空格实现字符级居中；奇数个空格时右侧多一个。
     private static func centered(_ value: String, width: Int) -> String {
         let padding = max(width - value.count, 0)
         let leading = padding / 2

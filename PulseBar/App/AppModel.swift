@@ -62,7 +62,6 @@ final class AppModel: ObservableObject {
         !settingsRepository.onboardingCompleted && !onboardingWindowRequested
     }
 
-    /// 幂等启动监控，先同步刷新策略与历史窗口，再订阅主线程采样结果。
     func startMonitoring() async {
         guard !hasStarted else { return }
         hasStarted = true
@@ -73,37 +72,31 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// 标记本次运行已请求引导，避免应用启动与菜单栏视图重复弹窗。
     func markOnboardingWindowRequested() {
         onboardingWindowRequested = true
     }
 
-    /// 同步菜单栏项插入状态；属性观察器负责记录是否被移除。
     func setMenuBarItemInserted(_ inserted: Bool) {
         guard isMenuBarItemInserted != inserted else { return }
         isMenuBarItemInserted = inserted
     }
 
-    /// 持久化引导完成状态，并阻止本次运行再次展示引导。
     func completeOnboarding() {
         settingsRepository.onboardingCompleted = true
         onboardingWindowRequested = true
     }
 
-    /// 关闭恢复提醒，同时清除此前菜单栏被移除的持久化标记。
     func dismissRecoveryNotice() {
         shouldShowRecoveryNotice = false
         settingsRepository.menuBarWasRemoved = false
     }
 
-    /// 重新插入菜单栏项并展示恢复提示，帮助用户定位恢复后的入口。
     func restoreMenuBarItem() {
         isMenuBarItemInserted = true
         shouldShowRecoveryNotice = true
         AppDelegate.shared?.showRecoveryWindow()
     }
 
-    /// 切换采样暂停状态；恢复时由协调器重新建立速率基线。
     func togglePaused() {
         Task {
             if monitoringState == .paused {
@@ -133,22 +126,18 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// 把系统即将睡眠事件转交采样协调器。
     func prepareForSleep() {
         Task { await coordinator.prepareForSleep() }
     }
 
-    /// 把系统唤醒事件转交协调器，恢复前重建差分基线。
     func resumeAfterWake() {
         Task { await coordinator.resumeAfterWake() }
     }
 
-    /// 通知协调器卷配置已变更，下一次采样重新读取卷容量。
     func volumeConfigurationChanged() {
         Task { await coordinator.volumeConfigurationChanged() }
     }
 
-    /// 切换模块可见性；拒绝关闭最后一个模块，并提供可本地化的错误提示。
     func toggleModule(_ module: MenuBarModule, visible: Bool) {
         if visible {
             guard !settings.visibleModules.contains(module) else { return }
@@ -165,17 +154,14 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// 按相对行数移动模块，供键盘、辅助功能或上下移动操作使用。
     func moveModule(_ module: MenuBarModule, offset: Int) {
         settings.moveModule(module, offset: offset)
     }
 
-    /// 将模块移到目标模块所在位置，供拖拽结束后提交新顺序。
     func moveModule(_ module: MenuBarModule, to target: MenuBarModule) {
         settings.moveModule(module, to: target)
     }
 
-    /// 请求修改登录项并回读系统状态；需要批准或执行失败时给出提示。
     func setLaunchAtLogin(_ enabled: Bool) {
         do {
             try loginItemService.setEnabled(enabled)
@@ -197,7 +183,6 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// 打开系统登录项设置，供用户处理待批准状态。
     func openLoginItemSettings() {
         loginItemService.openSystemSettings()
     }
@@ -236,7 +221,6 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// 根据偏好切换普通应用或菜单栏辅助应用模式，控制 Dock 图标可见性。
     private func applyAppearanceSettings() {
         NSApplication.shared.setActivationPolicy(settings.showDockIcon ? .regular : .accessory)
     }
@@ -272,7 +256,6 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// 仅识别完全不可用状态；预热和短期旧值不计入此处的失败标志。
     private func isUnavailable<Value: Sendable & Equatable>(
         _ value: MetricValue<Value>
     ) -> Bool {

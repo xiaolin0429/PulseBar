@@ -6,7 +6,6 @@ public actor CPUCollector {
     private let loadAverageProvider: @Sendable () -> [Double]
     private var previous: [CPUTickCounter]?
 
-    /// 注入累计计数器和负载读取器；保留依赖注入入口，便于测试不依赖真实 CPU。
     public init(
         reader: any CPURawReading = MachCPURawReader(),
         loadAverageProvider: @escaping @Sendable () -> [Double] = CPUCollector.systemLoadAverages
@@ -85,23 +84,19 @@ public actor CPUCollector {
         }
     }
 
-    /// 丢弃上一次计数，下一帧重新预热，避免把暂停或睡眠时段算进速率。
     public func resetBaseline() {
         previous = nil
     }
 
-    /// 求累计计数差；回退时返回 nil，让调用方重建基线。
     private func delta(_ current: UInt64, _ previous: UInt64) -> UInt64? {
         current >= previous ? current - previous : nil
     }
 
-    /// 将使用率限制在 0…1；非有限值按 0 处理。
     private func clamp(_ value: Double) -> Double {
         guard value.isFinite else { return 0 }
         return min(1, max(0, value))
     }
 
-    /// 读取系统 1、5、15 分钟负载；只返回成功读取的项，失败时返回空数组。
     public static func systemLoadAverages() -> [Double] {
         var values = [Double](repeating: 0, count: 3)
         let count = getloadavg(&values, Int32(values.count))
@@ -111,7 +106,6 @@ public actor CPUCollector {
 }
 
 private extension Collection {
-    /// 仅在索引有效时读取元素，兼容系统未返回全部三个负载平均值的情况。
     subscript(safe index: Index) -> Element? {
         indices.contains(index) ? self[index] : nil
     }

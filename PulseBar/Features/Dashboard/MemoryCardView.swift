@@ -81,12 +81,10 @@ struct MemoryCardView: View {
         }
     }
 
-    /// 将近似内存占用比例转为整数百分数。
     private func percent(_ value: Double) -> String {
         "\(Int((value * 100).rounded()))%"
     }
 
-    /// 根据压力等级设置进度条颜色；未知时保留内存模块的默认紫色。
     private func pressureColor(_ state: MemoryPressureState) -> Color {
         switch state {
         case .normal, .unknown: .purple
@@ -95,7 +93,6 @@ struct MemoryCardView: View {
         }
     }
 
-    /// 格式化交换空间已用/总量；任一字段缺失时显示本地化“不可用”。
     private func swapDescription(_ snapshot: MemorySnapshot) -> String {
         guard let used = snapshot.swapUsedBytes, let total = snapshot.swapTotalBytes else {
             return String(localized: "不可用", locale: locale)
@@ -103,7 +100,6 @@ struct MemoryCardView: View {
         return "\(bytes(used)) / \(bytes(total))"
     }
 
-    /// 按当前界面单位设置格式化内存字节容量。
     private func bytes(_ value: UInt64) -> String {
         MetricFormatter.bytes(value, unitSystem: unitSystem)
     }

@@ -8,7 +8,6 @@ public actor DiskCollector {
     private var cachedVolumes: [RawVolumeCapacity] = []
     private var lastVolumeRead: ContinuousClock.Instant?
 
-    /// 分别注入块设备计数器和卷容量读取器，使速率与容量可以独立降级。
     public init(
         counterReader: any DiskRawReading = IOKitDiskRawReader(),
         volumeReader: any VolumeRawReading = VolumeCapacityRawReader()
@@ -98,24 +97,20 @@ public actor DiskCollector {
         }
     }
 
-    /// 清除读写计数与时间基线；不清除低频刷新使用的卷容量缓存。
     public func resetBaseline() {
         previousCounters = nil
         previousInstant = nil
     }
 
-    /// 标记卷列表过期，在下一次采样时重新枚举挂载卷。
     public func invalidateVolumes() {
         lastVolumeRead = nil
     }
 
-    /// 首次读取或距上次刷新满 10 秒时才刷新，避免每帧枚举卷带来的开销。
     private func shouldRefreshVolumes(at instant: ContinuousClock.Instant) -> Bool {
         guard let lastVolumeRead else { return true }
         return lastVolumeRead.duration(to: instant) >= .seconds(10)
     }
 
-    /// 按 IOKit 注册表 ID 去重，同一设备保留最后一个计数。
     private func deduplicated(_ values: [DiskDeviceCounter]) -> [UInt64: DiskDeviceCounter] {
         values.reduce(into: [:]) { result, value in result[value.id] = value }
     }
@@ -145,7 +140,6 @@ public actor DiskCollector {
         return matched ? (read, write) : nil
     }
 
-    /// 构造仅有容量和 I/O 状态的快照；速率留空，以区别于真实的零吞吐。
     private func snapshot(
         volumes: [VolumeSnapshot],
         primaryVolumeID: String?,

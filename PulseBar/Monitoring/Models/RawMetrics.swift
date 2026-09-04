@@ -6,7 +6,6 @@ public struct CPUTickCounter: Sendable, Equatable {
     public let nice: UInt64
     public let idle: UInt64
 
-    /// 保存单个逻辑核心的四种累计 ticks；使用率由后续两帧差分得到。
     public init(user: UInt64, system: UInt64, nice: UInt64, idle: UInt64) {
         self.user = user
         self.system = system
@@ -25,7 +24,6 @@ public struct RawVMStatistics: Sendable, Equatable {
     public let compressedPages: UInt64
     public let purgeablePages: UInt64
 
-    /// 保存系统页大小与原始 VM 页数；不在数据模型内进行字节换算。
     public init(
         pageSize: UInt64,
         freePages: UInt64,
@@ -52,7 +50,6 @@ public struct RawSwapUsage: Sendable, Equatable {
     public let usedBytes: UInt64
     public let freeBytes: UInt64
 
-    /// 保存交换空间总量、已用量和空闲量，单位均为字节。
     public init(totalBytes: UInt64, usedBytes: UInt64, freeBytes: UInt64) {
         self.totalBytes = totalBytes
         self.usedBytes = usedBytes
@@ -65,7 +62,6 @@ public struct DiskDeviceCounter: Sendable, Equatable, Identifiable {
     public let readBytes: UInt64
     public let writtenBytes: UInt64
 
-    /// 保存设备注册表 ID 与累计读写字节数，供采集器跨帧对齐。
     public init(id: UInt64, readBytes: UInt64, writtenBytes: UInt64) {
         self.id = id
         self.readBytes = readBytes
@@ -83,7 +79,6 @@ public struct RawVolumeCapacity: Sendable, Equatable, Identifiable {
     public let isInternal: Bool?
     public let isRemovable: Bool?
 
-    /// 保存卷身份、挂载路径、字节容量及属性；未知属性保留 nil，不猜测。
     public init(
         id: String,
         name: String,
@@ -115,7 +110,6 @@ public struct InterfaceCounter: Sendable, Equatable, Identifiable {
 
     public var id: String { name }
 
-    /// 保存接口累计字节数和链路标志，供采集器过滤回环及未启用接口。
     public init(
         name: String,
         receivedBytes: UInt64,

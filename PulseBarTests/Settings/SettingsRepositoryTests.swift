@@ -3,7 +3,6 @@ import XCTest
 @testable import PulseBarCore
 
 final class SettingsRepositoryTests: XCTestCase {
-    /// 使用独立偏好域验证设置完整读写和引导完成标记，结束后移除测试域。
     func testSettingsRoundTripAndOnboardingFlag() throws {
         let suiteName = "SettingsRepositoryTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
@@ -22,7 +21,6 @@ final class SettingsRepositoryTests: XCTestCase {
         XCTAssertTrue(repository.onboardingCompleted)
     }
 
-    /// 验证空模块列表回退为 CPU，重复模块在保存时被去重。
     func testInvalidEmptyAndDuplicateModulesAreNormalized() throws {
         let suiteName = "SettingsRepositoryTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
@@ -38,7 +36,6 @@ final class SettingsRepositoryTests: XCTestCase {
         XCTAssertEqual(repository.load().visibleModules, [.cpu, .network])
     }
 
-    /// 验证全量排序去重、补齐缺失模块，并同步可见模块的相对顺序。
     func testModuleOrderNormalizesDuplicatesAndMissingModules() {
         var settings = AppSettings()
         settings.visibleModules = [.memory, .network, .cpu]
@@ -50,7 +47,6 @@ final class SettingsRepositoryTests: XCTestCase {
         XCTAssertEqual(normalized.visibleModules, [.network, .cpu, .memory])
     }
 
-    /// 验证目标位置和相对偏移两种移动方式均同步全量与可见顺序。
     func testMovingModuleUpdatesFullAndVisibleOrder() {
         var settings = AppSettings()
 
@@ -63,7 +59,6 @@ final class SettingsRepositoryTests: XCTestCase {
         XCTAssertEqual(settings.visibleModules, [.cpu, .network, .memory])
     }
 
-    /// 验证缺少 moduleOrder 的旧版设置沿用已显示模块顺序，并升级到版本 2。
     func testLegacySettingsWithoutModuleOrderPreserveVisibleOrder() throws {
         let suiteName = "SettingsRepositoryTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
@@ -94,7 +89,6 @@ final class SettingsRepositoryTests: XCTestCase {
         XCTAssertEqual(loaded.visibleModules, [.network, .cpu])
     }
 
-    /// 验证损坏的持久化数据回退为默认设置，而不是阻断应用启动。
     func testCorruptDataFallsBackToSafeDefaults() throws {
         let suiteName = "SettingsRepositoryTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))

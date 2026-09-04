@@ -1,7 +1,6 @@
 import Darwin
 
 public struct BSDInterfaceCounterReader: NetworkRawReading {
-    /// 创建无状态接口读取器，不持有系统接口链表。
     public init() {}
 
     /// 遍历 getifaddrs 的链路层条目，按接口名去重并返回累计字节数。

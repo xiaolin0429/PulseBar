@@ -71,12 +71,10 @@ struct CPUCardView: View {
         }
     }
 
-    /// 将 0…1 使用率转换为四舍五入的整数百分数。
     private func percent(_ ratio: Double) -> String {
         "\(Int((ratio * 100).rounded()))%"
     }
 
-    /// 将系统负载保留两位小数，便于比较 1/5/15 分钟数值。
     private func number(_ value: Double) -> String {
         value.formatted(.number.precision(.fractionLength(2)))
     }

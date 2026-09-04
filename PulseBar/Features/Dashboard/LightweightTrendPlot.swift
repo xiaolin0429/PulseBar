@@ -4,7 +4,6 @@ struct LightweightTrendPlot: View {
     let series: [TrendSeries]
     let filledSeriesID: String?
 
-    /// 保存已经归一化的绘图序列及可选填充序列 ID；这里只负责绘制，不采样或持有历史。
     init(series: [TrendSeries], filledSeriesID: String? = nil) {
         self.series = series
         self.filledSeriesID = filledSeriesID
@@ -120,7 +119,6 @@ enum TrendSamples {
 private struct TrendLineShape: Shape {
     let samples: [TrendSample]
 
-    /// 顺序连接样本点生成折线路径；空序列返回空路径。
     func path(in rect: CGRect) -> Path {
         var path = Path()
         guard let first = samples.first else { return path }
@@ -135,7 +133,6 @@ private struct TrendLineShape: Shape {
 private struct TrendAreaShape: Shape {
     let samples: [TrendSample]
 
-    /// 连接样本点并闭合到图表底边，生成折线下方的填充区域。
     func path(in rect: CGRect) -> Path {
         var path = Path()
         guard let first = samples.first, let last = samples.last else { return path }
@@ -151,7 +148,6 @@ private struct TrendAreaShape: Shape {
 }
 
 private struct TrendGridShape: Shape {
-    /// 绘制顶部、中线和底部三条水平参考线，无需构造额外网格视图。
     func path(in rect: CGRect) -> Path {
         var path = Path()
         for ratio in [0.0, 0.5, 1.0] {
@@ -163,7 +159,6 @@ private struct TrendGridShape: Shape {
     }
 }
 
-/// 把归一化坐标映射到绘图矩形，并翻转纵轴，使较大数值显示在上方。
 private func trendPosition(_ sample: TrendSample, in rect: CGRect) -> CGPoint {
     CGPoint(
         x: rect.minX + rect.width * sample.x,

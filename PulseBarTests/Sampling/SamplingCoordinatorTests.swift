@@ -3,7 +3,6 @@ import XCTest
 @testable import PulseBarCore
 
 final class SamplingCoordinatorTests: XCTestCase {
-    /// 验证协调器连续投递递增序号，并在面板可见时包含有效历史点。
     func testCoordinatorPublishesSequentialSnapshotsAndVisibleHistory() async {
         let cpu = CPUCollector(
             reader: SequenceCPUReader([
@@ -66,7 +65,6 @@ final class SamplingCoordinatorTests: XCTestCase {
         XCTAssertEqual(result.histories.last?.memoryUsage.count, 2)
     }
 
-    /// 验证面板隐藏时仍投递快照，但历史始终为空，避免后台构造展示数组。
     func testHiddenDashboardDoesNotMaterializeHistory() async {
         let coordinator = makeCoordinator()
         let recorder = await MainActor.run { DeliveryRecorder() }
@@ -82,7 +80,6 @@ final class SamplingCoordinatorTests: XCTestCase {
     }
 }
 
-/// 组装全部使用测试读取器的协调器，避免采样调度测试依赖真实机器状态。
 private func makeCoordinator() -> SamplingCoordinator {
     SamplingCoordinator(
         cpuCollector: CPUCollector(
@@ -138,7 +135,6 @@ private final class DeliveryRecorder {
         (snapshots, histories)
     }
 
-    /// 在主线程记录每次投递的快照与历史，用于断言顺序和显示策略。
     func record(snapshot: SystemSnapshot, history: DashboardHistory) {
         snapshots.append(snapshot)
         histories.append(history)

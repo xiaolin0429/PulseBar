@@ -121,7 +121,6 @@ struct DiskCardView: View {
         }
     }
 
-    /// 构建带方向图标的读写速率项，使用当前单位设置；缺失速率显示占位符。
     private func rateLabel(
         title: LocalizedStringKey,
         symbol: String,
@@ -142,12 +141,10 @@ struct DiskCardView: View {
         }
     }
 
-    /// 将卷使用比例转换为整数百分数。
     private func percent(_ ratio: Double) -> String {
         "\(Int((ratio * 100).rounded()))%"
     }
 
-    /// 按当前界面单位设置格式化磁盘容量。
     private func bytes(_ value: UInt64) -> String {
         MetricFormatter.bytes(value, unitSystem: unitSystem)
     }

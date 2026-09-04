@@ -1,10 +1,8 @@
 import Darwin
 
 public struct MachMemoryRawReader: MemoryRawReading {
-    /// 创建无状态 VM 读取器；仅在请求数据时调用系统 API。
     public init() {}
 
-    /// 读取实际页大小和 64 位 VM 页计数；任一 Mach 调用失败都携带原始错误码抛出。
     public func readVMStatistics() throws -> RawVMStatistics {
         var pageSize: vm_size_t = 0
         let pageResult = host_page_size(mach_host_self(), &pageSize)
@@ -37,7 +35,6 @@ public struct MachMemoryRawReader: MemoryRawReading {
         )
     }
 
-    /// 通过 sysctl 读取 vm.swapusage；系统调用失败时将 errno 向上传递。
     public func readSwapUsage() throws -> RawSwapUsage? {
         var usage = xsw_usage()
         var size = MemoryLayout<xsw_usage>.size

@@ -14,7 +14,6 @@ struct MenuBarSummary: Equatable, Sendable {
         case critical
     }
 
-    /// 创建仅含菜单栏必需数值和告警等级的摘要，供预览或占位使用。
     init(
         cpuPercent: Double?,
         memoryPercent: Double?,
@@ -49,8 +48,6 @@ struct MenuBarSummary: Equatable, Sendable {
         severity: .normal
     )
 
-    /// 从系统快照提取轻量摘要，比例转为百分数，并根据内存压力及磁盘余量定级。
-    /// 允许使用短期 stale 值，但不携带完整历史、卷列表或单核数据。
     init(snapshot: SystemSnapshot) {
         let cpu = snapshot.cpu.availableValue
         let memory = snapshot.memory.availableValue

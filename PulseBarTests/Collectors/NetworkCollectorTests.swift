@@ -3,7 +3,6 @@ import XCTest
 @testable import PulseBarCore
 
 final class NetworkCollectorTests: XCTestCase {
-    /// 验证只统计选中的主接口，按实际时间计算速率并累计有效会话流量。
     func testNetworkRateUsesPrimaryInterfaceAndAccumulatesSession() async {
         let reader = SequenceNetworkReader([
             [interface("lo0", received: 9_999, sent: 9_999, loopback: true), interface("en0", received: 100, sent: 200)],
@@ -29,7 +28,6 @@ final class NetworkCollectorTests: XCTestCase {
         XCTAssertEqual(second.interface?.kind, .wifi)
     }
 
-    /// 验证从物理接口切换到 VPN 时重新预热，不把两个接口的累计值相减。
     func testInterfaceSwitchWarmsAndDoesNotCrossSubtract() async {
         let reader = SequenceNetworkReader([
             [interface("en0", received: 1_000, sent: 1_000)],
@@ -51,7 +49,6 @@ final class NetworkCollectorTests: XCTestCase {
         XCTAssertEqual(snapshot.interface?.kind, .vpn)
     }
 
-    /// 验证离线时返回明确的零下载速率，不要求读取接口计数。
     func testOfflinePathReportsZeroAndResetsBaseline() async {
         let collector = NetworkCollector(
             counterReader: SequenceNetworkReader([]),
@@ -69,12 +66,10 @@ final class NetworkCollectorTests: XCTestCase {
 private final class ChangingInterfaceResolver: PrimaryInterfaceResolving, Sendable {
     private let names: OSAllocatedUnfairLock<[String]>
 
-    /// 保存按次返回的主接口名称序列，用锁保护跨并发域访问。
     init(names: [String]) {
         self.names = OSAllocatedUnfairLock(initialState: names)
     }
 
-    /// 取出下一个模拟主接口名，序列耗尽时返回 nil。
     func primaryInterfaceName() -> String? {
         names.withLock { values in values.isEmpty ? nil : values.removeFirst() }
     }

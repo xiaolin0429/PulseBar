@@ -67,7 +67,6 @@ struct OnboardingView: View {
         .accessibilityIdentifier("onboarding")
     }
 
-    /// 创建引导页中的图标与功能标题列，各列均分可用宽度。
     private func onboardingFeature(_ title: LocalizedStringKey, icon: String) -> some View {
         VStack(spacing: 7) {
             Image(systemName: icon)

@@ -8,7 +8,6 @@ output_dir="$project_root/PulseBar/Resources/Assets.xcassets/AppIcon.appiconset"
 render_root="$(mktemp -d /tmp/pulsebar-icon.XXXXXX)"
 master_png="$render_root/AppIcon-1024.png"
 
-# 退出时只删除本次渲染的临时目录，保留已输出到资源目录的图标。
 cleanup() {
     rm -rf "$render_root"
 }
