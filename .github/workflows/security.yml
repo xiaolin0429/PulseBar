@@ -1,0 +1,117 @@
+name: Security review
+
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev, main]
+  schedule:
+    - cron: '23 2 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: low
+          fail-on-scopes: runtime, development, unknown
+          license-check: false
+          comment-summary-in-pr: never
+
+  codeql:
+    name: CodeQL (${{ matrix.label }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: swift
+            label: Swift
+            # CodeQL's Apple Silicon support is beta; use the standard Intel
+            # runner for extraction while CI builds/tests natively on arm64.
+            runner: macos-26-intel
+            build-mode: manual
+          - language: actions
+            label: Actions
+            runner: ubuntu-latest
+            build-mode: none
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Select the locally verified Xcode 26.6 toolchain
+        if: matrix.language == 'swift'
+        run: sudo xcode-select --switch /Applications/Xcode_26.6.app/Contents/Developer
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          queries: security-extended
+      - name: Build Swift application and tools for analysis
+        if: matrix.language == 'swift'
+        # CodeQL requires real compiler invocations, without Xcode's integrated
+        # Swift driver or compilation caches (see GitHub's prepare-code guide).
+        run: |
+          # Report process names only, never their arguments or environment.
+          # This makes a stalled compiler/extractor diagnosable in hosted CI.
+          (
+            while sleep 60; do
+              ps -axo pid,ppid,%cpu,etime,comm | awk 'NR == 1 || /swift|codeql|xcodebuild/'
+            done
+          ) &
+          diagnostic_pid=$!
+          trap 'kill "$diagnostic_pid" 2>/dev/null || true' EXIT
+          xcodebuild -project PulseBar.xcodeproj -scheme PulseBar \
+            -configuration Debug -destination 'platform=macOS,arch=x86_64' \
+            -derivedDataPath "$RUNNER_TEMP/PulseBar-CodeQL" \
+            CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
+            COMPILATION_CACHE_ENABLE_CACHING=NO SWIFT_ENABLE_COMPILE_CACHE=NO \
+            SWIFT_USE_INTEGRATED_DRIVER=NO ONLY_ACTIVE_ARCH=YES clean build
+          swift build
+      - name: Analyze and publish security findings
+        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          category: /language:${{ matrix.language }}
+          output: ${{ runner.temp }}/codeql-results
+          wait-for-processing: true
+      # A successful SARIF upload alone does not mean that the scan found no
+      # vulnerabilities. Fail this required check when it reports findings.
+      - name: Reject CodeQL findings
+        env:
+          SARIF_DIRECTORY: ${{ runner.temp }}/codeql-results
+        shell: python
+        run: |
+          import glob
+          import json
+          import os
+          import sys
+
+          files = glob.glob(os.path.join(os.environ['SARIF_DIRECTORY'], '*.sarif'))
+          if not files:
+              print('::error::No CodeQL SARIF result was produced.')
+              sys.exit(1)
+          count = 0
+          for path in files:
+              with open(path, encoding='utf-8') as report:
+                  for run in json.load(report).get('runs', []):
+                      count += len(run.get('results', []))
+          if count:
+              print(f'::error::CodeQL reported {count} findings. Resolve them before merging.')
+              sys.exit(1)
+          print('PASS: CodeQL reported no findings.')

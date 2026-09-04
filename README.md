@@ -1,5 +1,7 @@
 English | [简体中文](README.zh-CN.md)
 
+[Contribution and branch workflow](CONTRIBUTING.md) · `feat/* → dev → main`
+
 # PulseBar
 
 PulseBar is a native, lightweight system monitor for the macOS menu bar. A single compact menu bar item presents CPU, memory, disk, and network status; click it to inspect metric breakdowns, recent trends, and measurement definitions.
