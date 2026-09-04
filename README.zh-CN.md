@@ -66,6 +66,14 @@ Scripts/package-local-release.sh --verify    # 打包前执行完整发布门禁
 
 本地产物用于开发验证，不等同于 Apple 发行签名、公证、TestFlight 或 App Store 审核。
 
+## 自动 GitHub Release
+
+`dev -> main` PR 合入后，[CI](.github/workflows/ci.yml) 自动执行单元测试、Debug 构建和 Universal Release 打包校验，再将 ZIP 与 `SHA256SUMS.txt` 发布到 [GitHub Releases](https://github.com/xiaolin0429/PulseBar/releases)。PR 和 `dev` 推送也会验证打包，但只有 `main` 推送会发布 Release。
+
+标签格式为 `v<应用版本>-<12 位提交号>`（例如 `v1.0.0-0123456789ab`），指向本次合入的准确提交。每个 main 提交生成独立 Release，不自动修改应用版本。失败后可重新运行 CI：未完成的草稿继续上传，已发布的附件保持原样。只有当前 main 提交可以标记为 Latest。
+
+发布使用内置 `GITHUB_TOKEN`，仅发布 job 具有 `contents: write` 权限，无须配置个人令牌或 Apple 签名密钥。自动产物为 ad-hoc 签名、未经 Apple 公证的构建，macOS 可能阻止打开。CI 不能替代[发布清单](doc/zh-CN/RELEASE_CHECKLIST.md)中的完整本地门禁、真机/UI 验收和 Apple 发行步骤。
+
 ## 性能与长稳验证
 
 ```bash

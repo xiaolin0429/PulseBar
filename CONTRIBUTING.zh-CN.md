@@ -19,6 +19,8 @@ git push -u origin feat/your-change
 
 GitHub 规则集还会强制检查代码扫描结果。禁止为了合入而删除失败检查、修改必过检查名称或放宽规则。即使不强制他人批准，也应仔细审阅 `.github/workflows/` 的改动。仓库管理员仍可编辑规则，这不等同于不可修改的组织级策略。
 
+`dev -> main` 合入后，CI 自动打包并发布对应提交的 GitHub Release。现有 **Build and test** 必过检查也会在合入前验证 Universal 打包。产物、标签、签名边界和重试方式见[自动 GitHub Release](README.zh-CN.md#自动-github-release)。
+
 ## 发行后同步
 
 使用合并提交保留分支祖先关系。`dev -> main` 合入后，`main` 会增加合并提交，应通过功能分支同步回 `dev`，不能直接推送：

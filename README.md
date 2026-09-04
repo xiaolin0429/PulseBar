@@ -66,6 +66,14 @@ The script produces an `arm64 + x86_64` Universal, ad-hoc signed `.app` and ZIP.
 
 Local packages are development artifacts. They are not equivalent to Apple distribution signing, notarization, TestFlight, or App Store approval.
 
+## Automatic GitHub Releases
+
+After a `dev -> main` PR is merged, [CI](.github/workflows/ci.yml) runs unit tests, builds the Debug app, and validates the Universal release package. It then publishes the ZIP and `SHA256SUMS.txt` to [GitHub Releases](https://github.com/xiaolin0429/PulseBar/releases). PRs and `dev` pushes also validate packaging, but only a `main` push publishes a release.
+
+Tags use `v<app-version>-<12-character-commit>` (for example, `v1.0.0-0123456789ab`) and point to the exact merged commit. Every main commit gets its own release without changing the app version automatically. To retry a failure, rerun the CI workflow: unfinished drafts resume, and published assets remain unchanged. Only the current main commit is eligible for the Latest label.
+
+Publishing uses the built-in `GITHUB_TOKEN` with `contents: write` only in the publishing job; no personal token or Apple signing secret is required. These are ad-hoc signed, unnotarized builds, so macOS may block opening them. CI does not replace the full local release gate, hardware/UI acceptance, or Apple distribution steps in the [release checklist](doc/en/RELEASE_CHECKLIST.md).
+
 ## Performance and soak testing
 
 ```bash
