@@ -143,6 +143,8 @@ struct SettingsView: View {
         .padding(12)
     }
 
+    /// 构建可排序模块行，固定开关与句柄宽度以保持列对齐。
+    /// 拖动时整行只应用纵向偏移，保留上下文菜单及辅助功能重排入口。
     private func moduleRow(_ module: MenuBarModule) -> some View {
         let isVisible = model.settings.visibleModules.contains(module)
         let orderedModules = model.settings.orderedModules
@@ -216,6 +218,8 @@ struct SettingsView: View {
         .animation(.easeOut(duration: 0.12), value: draggedModule)
     }
 
+    /// 从右侧句柄启动局部重排，只读取纵向位移；松手后才提交模块新顺序。
+    /// 不创建系统自由拖放预览，避免行跟随指针横向飞出列表。
     private func moduleReorderGesture(for module: MenuBarModule) -> some Gesture {
         DragGesture(minimumDistance: 4, coordinateSpace: .global)
             .updating($moduleDragOffset) { value, state, _ in
@@ -234,6 +238,7 @@ struct SettingsView: View {
             }
     }
 
+    /// 按当前行到首尾行的距离限制拖动范围，保证整行不越过模块列表边界。
     private func constrainedDragOffset(for module: MenuBarModule) -> CGFloat {
         let orderedModules = model.settings.orderedModules
         guard let index = orderedModules.firstIndex(of: module) else { return 0 }
@@ -242,6 +247,7 @@ struct SettingsView: View {
         return min(max(moduleDragOffset, minimum), maximum)
     }
 
+    /// 将纵向位移除以固定行距并取整，限制目标索引后以动画提交排序。
     private func moveModuleAfterDrag(_ module: MenuBarModule, verticalTranslation: CGFloat) {
         let orderedModules = model.settings.orderedModules
         guard let sourceIndex = orderedModules.firstIndex(of: module) else { return }
@@ -320,6 +326,7 @@ struct SettingsView: View {
         .padding(12)
     }
 
+    /// 展示产品对该权限的请求说明；granted 是传入的展示标记，并非实时权限查询。
     private func permissionRow(_ title: LocalizedStringKey, granted: Bool) -> some View {
         HStack {
             Text(title)
@@ -334,6 +341,7 @@ struct SettingsView: View {
         }
     }
 
+    /// 把模块枚举映射为界面本地化键，供行标题和辅助功能复用。
     private func moduleLabel(_ module: MenuBarModule) -> LocalizedStringKey {
         switch module {
         case .cpu: "CPU"
@@ -352,15 +360,18 @@ struct SettingsView: View {
 }
 
 private struct SettingsWindowRegistrationView: NSViewRepresentable {
+    /// 创建无可见内容的 AppKit 桥接视图，用于获取设置窗口引用。
     func makeNSView(context: Context) -> SettingsWindowRegistrationNSView {
         SettingsWindowRegistrationNSView()
     }
 
+    /// 窗口注册由挂载回调完成；普通 SwiftUI 更新无需重复操作窗口。
     func updateNSView(_ nsView: SettingsWindowRegistrationNSView, context: Context) {}
 }
 
 @MainActor
 private final class SettingsWindowRegistrationNSView: NSView {
+    /// 视图挂入窗口后登记真实 NSWindow，使设置按钮能复用并置前已有窗口。
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         guard let window else { return }

@@ -43,6 +43,7 @@ struct MenuBarLabelView: View {
         " · "
     }
 
+    /// 保留用户排序；磁盘只在完整密度展示，开关启用并不代表所有密度都会显示。
     private var displayedModules: [MenuBarModule] {
         preferences.visibleModules.filter { module in
             module != .disk || preferences.preset == .complete
@@ -55,6 +56,7 @@ struct MenuBarLabelView: View {
         )
     }
 
+    /// 为标准/完整密度生成上下两行：CPU/内存显示值与名称，网络显示上传与下载。
     private func twoLineColumn(for module: MenuBarModule) -> MetricFormatter.TwoLineColumn {
         switch module {
         case .cpu:
@@ -77,6 +79,7 @@ struct MenuBarLabelView: View {
         }
     }
 
+    /// 生成简洁密度的单行片段；网络只显示下载速率，缺失值使用占位符。
     private func compactLabel(for module: MenuBarModule) -> String? {
         switch module {
         case .cpu:
@@ -124,6 +127,7 @@ struct MenuBarLabelView: View {
         )
     }
 
+    /// 格式化已转换为 0…100 口径的百分数，按偏好显示整数或一位小数。
     private func percent(_ value: Double) -> String {
         let digits = preferences.showDecimals ? 1 : 0
         return "\(value.formatted(.number.precision(.fractionLength(digits))))%"

@@ -1,6 +1,9 @@
 import Foundation
 
 public enum TrendPointReducer {
+    /// 按桶抽取极值并保留首尾点，将绘图点数限制在 maximumCount 以内。
+    /// 输入应按采样序号递增排列；内部名额不足时会截断候选极值，并非保证保留所有峰谷。
+    /// 上限为 1 时只保留最新点，为 2 时保留首尾；非正上限返回空数组。
     public static func reduce(
         _ points: [HistoryPoint],
         maximumCount: Int = 60

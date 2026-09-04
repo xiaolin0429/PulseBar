@@ -14,6 +14,7 @@ struct PerformanceProbe {
         var passed: Bool { p95Milliseconds <= budgetMilliseconds }
     }
 
+    /// 依次基准测试原始读取器；任一 p95 超预算或读取失败时以非零退出码结束。
     static func main() {
         let iterations = parsedIterations()
         print("PulseBar collector benchmark (\(iterations) iterations)")
@@ -62,6 +63,8 @@ struct PerformanceProbe {
         }
     }
 
+    /// 先执行 5 次预热，再用单调时钟记录每次调用耗时，排序计算 p50/p95/最大值。
+    /// 测量的是同步读取耗时，不是应用整体 CPU 占用或界面性能。
     private static func measure(
         _ name: String,
         iterations: Int,
@@ -90,6 +93,7 @@ struct PerformanceProbe {
         )
     }
 
+    /// 从已升序排列的耗时数组按最近秩法取百分位；空数组返回 0。
     private static func percentile(_ percentile: Double, values: [Double]) -> Double {
         guard !values.isEmpty else { return 0 }
         let index = min(
@@ -99,6 +103,7 @@ struct PerformanceProbe {
         return values[index]
     }
 
+    /// 解析 --iterations；缺失或无效时使用 120，有效值限制为 20…10000。
     private static func parsedIterations() -> Int {
         guard let index = CommandLine.arguments.firstIndex(of: "--iterations"),
               CommandLine.arguments.indices.contains(index + 1),
@@ -108,6 +113,7 @@ struct PerformanceProbe {
         return min(10_000, max(20, value))
     }
 
+    /// 将毫秒结果格式化为两位小数，统一基准输出精度。
     private static func format(_ value: Double) -> String {
         value.formatted(.number.precision(.fractionLength(2)))
     }

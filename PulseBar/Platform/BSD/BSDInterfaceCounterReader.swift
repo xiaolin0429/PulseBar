@@ -1,8 +1,11 @@
 import Darwin
 
 public struct BSDInterfaceCounterReader: NetworkRawReading {
+    /// 创建无状态接口读取器，不持有系统接口链表。
     public init() {}
 
+    /// 遍历 getifaddrs 的链路层条目，按接口名去重并返回累计字节数。
+    /// 通过 defer 释放系统链表，避免高频采样泄漏；主接口选择留给采集器。
     public func readInterfaceCounters() throws -> [InterfaceCounter] {
         var firstAddress: UnsafeMutablePointer<ifaddrs>?
         let result = getifaddrs(&firstAddress)

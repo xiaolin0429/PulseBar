@@ -2,6 +2,7 @@ import XCTest
 @testable import PulseBarCore
 
 final class DiskCollectorTests: XCTestCase {
+    /// 验证跨设备读写增量按实际 2 秒间隔计算，同时保留卷容量。
     func testDiskRatesUseRealElapsedTimeAndAggregateDevices() async {
         let reader = SequenceDiskReader([
             [
@@ -34,6 +35,7 @@ final class DiskCollectorTests: XCTestCase {
         XCTAssertEqual(second.primaryVolume?.availableCapacityBytes, 400)
     }
 
+    /// 验证 I/O 来源失败时仅降级速率，卷容量仍可展示。
     func testDiskIOFailureDoesNotHideCapacity() async {
         let collector = DiskCollector(
             counterReader: FailingDiskReader(),
@@ -48,6 +50,7 @@ final class DiskCollectorTests: XCTestCase {
         XCTAssertEqual(snapshot.volumes.count, 1)
     }
 
+    /// 验证设备计数回退时返回预热状态而非错误速率。
     func testCounterRollbackWarmsInsteadOfProducingNegativeRate() async {
         let reader = SequenceDiskReader([
             [DiskDeviceCounter(id: 1, readBytes: 200, writtenBytes: 200)],

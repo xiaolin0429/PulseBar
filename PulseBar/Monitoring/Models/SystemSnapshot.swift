@@ -9,6 +9,8 @@ public struct SystemSnapshot: Sendable, Equatable {
     public let disk: MetricValue<DiskSnapshot>
     public let network: MetricValue<NetworkSnapshot>
 
+    /// 把同轮采样的四类指标封装为不可变快照。
+    /// wallTime 用于展示，monotonicTime 用于间隔和过期计算，sequence 用于跨序列对齐。
     public init(
         sequence: UInt64,
         wallTime: Date,

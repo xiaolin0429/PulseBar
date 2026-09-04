@@ -3,6 +3,8 @@ import SwiftUI
 enum DashboardMotion {
     static let disclosure = Animation.easeInOut(duration: 0.22)
 
+    /// 将展开状态写入同一个动画事务，使卡片布局与折线一起移动。
+    /// 开启系统“减弱动态效果”时禁用该动画。
     static func expansionBinding(
         _ binding: Binding<Bool>,
         reduceMotion: Bool

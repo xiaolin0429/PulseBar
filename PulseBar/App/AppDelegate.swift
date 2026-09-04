@@ -12,11 +12,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private weak var settingsWindow: NSWindow?
     private var shouldBringSettingsWindowToFront = false
 
+    /// 保存应用代理的弱引用，供界面动作找到统一窗口管理入口。
     override init() {
         super.init()
         Self.shared = self
     }
 
+    /// 启动后按持久化状态展示首次引导或菜单栏恢复提示。
     func applicationDidFinishLaunching(_ notification: Notification) {
         PulseBarLog.lifecycle.info("PulseBar launched")
         guard let model = Self.model else { return }
@@ -28,6 +30,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// 响应 Dock/Finder 的再次打开：恢复被移除的菜单栏项，或按设置展示独立面板。
     func applicationShouldHandleReopen(
         _ sender: NSApplication,
         hasVisibleWindows flag: Bool
@@ -43,10 +46,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 
+    /// 记录应用正常退出事件，便于区分生命周期与采样问题。
     func applicationWillTerminate(_ notification: Notification) {
         PulseBarLog.lifecycle.info("PulseBar terminating")
     }
 
+    /// 注入当前模型和语言，创建或复用首次使用引导窗口。
     func showOnboardingWindow() {
         guard let model = Self.model else { return }
         let root = AnyView(
@@ -65,6 +70,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }
 
+    /// 展示可复用的恢复提示窗口，帮助用户找回菜单栏入口。
     func showRecoveryWindow() {
         guard let model = Self.model else { return }
         let root = AnyView(
@@ -83,6 +89,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }
 
+    /// 创建或复用独立监控窗口，注入面板状态、单位及语言设置。
     func showDashboardWindow() {
         guard let model = Self.model else { return }
         let root = AnyView(
@@ -100,6 +107,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }
 
+    /// 接收 SwiftUI 设置视图所属的真实 NSWindow，并兑现首次创建时挂起的置前请求。
     func registerSettingsWindow(_ window: NSWindow) {
         settingsWindow = window
         guard shouldBringSettingsWindowToFront else { return }
@@ -107,6 +115,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         bringSettingsWindowToFront()
     }
 
+    /// 优先激活已有设置窗口；不存在时才调用创建闭包，并等待窗口注册后置前。
     func openSettings(createIfNeeded: () -> Void) {
         if bringSettingsWindowToFront() {
             return
@@ -117,6 +126,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
 
+    /// 激活应用、还原最小化状态并置前设置窗口；未注册窗口时返回 false。
     @discardableResult
     private func bringSettingsWindowToFront() -> Bool {
         guard let settingsWindow else { return false }
@@ -129,6 +139,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 
+    /// 统一创建或复用辅助窗口；复用时替换内容，关闭后保留窗口供下次展示。
     private func present(
         existing: NSWindow?,
         title: String,

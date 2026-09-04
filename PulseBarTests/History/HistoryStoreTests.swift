@@ -3,6 +3,7 @@ import XCTest
 @testable import PulseBarCore
 
 final class HistoryStoreTests: XCTestCase {
+    /// 验证缓存满后覆盖最旧元素，导出顺序仍为从旧到新。
     func testRingBufferOverwritesOldestAndPreservesOrder() {
         var buffer = RingBuffer<Int>(capacity: 3)
         buffer.append(1)
@@ -12,6 +13,7 @@ final class HistoryStoreTests: XCTestCase {
         XCTAssertEqual(buffer.elements(), [2, 3, 4])
     }
 
+    /// 验证 60 秒窗口只保留单调时间范围内的采样。
     func testHistoryUsesMonotonicWindow() {
         let clock = ContinuousClock()
         let start = clock.now
@@ -27,6 +29,7 @@ final class HistoryStoreTests: XCTestCase {
         XCTAssertEqual(history.cpuUsage.map(\.sequence), [2, 3])
     }
 
+    /// 构建仅 CPU 可用的指定时间快照，使历史筛选测试不依赖真实系统数据。
     private func snapshot(
         sequence: UInt64,
         instant: ContinuousClock.Instant,

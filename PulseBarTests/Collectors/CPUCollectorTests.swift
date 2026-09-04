@@ -2,6 +2,7 @@ import XCTest
 @testable import PulseBarCore
 
 final class CPUCollectorTests: XCTestCase {
+    /// 验证第一帧仅建立基线，第二帧按累计 ticks 差计算整体与单核占用。
     func testFirstSampleWarmsAndSecondUsesAggregateTicks() async {
         let reader = SequenceCPUReader([
             [tick(100, 50, 0, 850), tick(200, 50, 0, 750)],
@@ -20,6 +21,7 @@ final class CPUCollectorTests: XCTestCase {
         XCTAssertEqual(value.loadAverage15m, 3)
     }
 
+    /// 验证计数回退不会产生负速率，而是重新进入预热。
     func testCounterRollbackRebuildsBaseline() async {
         let reader = SequenceCPUReader([
             [tick(100, 0, 0, 100)],
@@ -33,6 +35,7 @@ final class CPUCollectorTests: XCTestCase {
         XCTAssertEqual(second, .warmingUp)
     }
 
+    /// 验证逻辑核心数变化后丢弃旧基线，避免不同核心集合相减。
     func testCoreCountChangeRebuildsBaseline() async {
         let reader = SequenceCPUReader([
             [tick(1, 1, 0, 8)],

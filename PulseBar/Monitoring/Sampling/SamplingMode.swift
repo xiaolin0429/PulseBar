@@ -6,6 +6,7 @@ public enum RefreshPolicy: String, CaseIterable, Codable, Sendable {
     case everyTwoSeconds
     case everyFiveSeconds
 
+    /// 返回采样等待间隔；自适应模式为面板可见 1 秒、隐藏 2 秒，其他模式固定。
     public func interval(dashboardVisible: Bool) -> Duration {
         switch self {
         case .adaptive: dashboardVisible ? .seconds(1) : .seconds(2)

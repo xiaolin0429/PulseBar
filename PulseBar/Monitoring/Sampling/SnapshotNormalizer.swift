@@ -6,8 +6,10 @@ public struct SnapshotNormalizer: Sendable {
     private var lastDisk: TimedValue<DiskSnapshot>?
     private var lastNetwork: TimedValue<NetworkSnapshot>?
 
+    /// 创建尚未缓存任何成功指标的归一化器。
     public init() {}
 
+    /// 分别归一化四类指标，同时保留原始采样序号与时间戳。
     public mutating func normalize(_ snapshot: SystemSnapshot) -> SystemSnapshot {
         SystemSnapshot(
             sequence: snapshot.sequence,
@@ -20,6 +22,7 @@ public struct SnapshotNormalizer: Sendable {
         )
     }
 
+    /// 丢弃所有最近成功值，避免恢复监控后用睡眠前的旧数据兜底。
     public mutating func reset() {
         lastCPU = nil
         lastMemory = nil
@@ -27,6 +30,8 @@ public struct SnapshotNormalizer: Sendable {
         lastNetwork = nil
     }
 
+    /// 缓存成功值；读取失败时仅用 30 秒内的成功值降级为 stale，超时保持不可用。
+    /// 预热状态原样返回；传入 stale 时只按已有缓存时间更新年龄。
     private func normalize<Value>(
         _ current: MetricValue<Value>,
         at instant: ContinuousClock.Instant,

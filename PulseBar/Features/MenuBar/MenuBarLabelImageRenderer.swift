@@ -7,6 +7,8 @@ enum MenuBarLabelImageRenderer {
     private static let canvasHeight: CGFloat = 20
     private static let horizontalInset: CGFloat = 1
 
+    /// 以固定 8 pt 等宽字体、20 pt 高画布绘制双行模板图，宽度按文本测量。
+    /// 绕过菜单栏对多行 Text 字号的处理限制，模板图由系统适配显示颜色。
     static func render(_ label: String) -> NSImage {
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.alignment = .center

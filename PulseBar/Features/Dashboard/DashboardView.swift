@@ -6,6 +6,7 @@ struct DashboardView: View {
     @EnvironmentObject private var presentation: DashboardPresentationState
     @Environment(\.locale) private var locale
 
+    /// 隐藏时移除卡片子树，仅保留占位尺寸，让图表视图及其展示数据有机会释放。
     var body: some View {
         Group {
             if presentation.isVisible {

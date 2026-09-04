@@ -3,8 +3,11 @@ import IOKit
 import IOKit.storage
 
 public struct IOKitDiskRawReader: DiskRawReading {
+    /// 创建无状态块设备读取器；IOKit 句柄只在单次读取内持有。
     public init() {}
 
+    /// 遍历块存储驱动统计，用注册表 ID 标识设备；缺失字段的设备被跳过。
+    /// 迭代器和服务句柄均在本次调用内释放；没有有效计数时抛出来源不可用错误。
     public func readDeviceCounters() throws -> [DiskDeviceCounter] {
         var iterator: io_iterator_t = 0
         let matching = IOServiceMatching(kIOBlockStorageDriverClass)
@@ -53,6 +56,7 @@ public struct IOKitDiskRawReader: DiskRawReading {
         return counters.sorted { $0.id < $1.id }
     }
 
+    /// 兼容 IOKit 字典中的 NSNumber 与 UInt64 表示；其他类型返回 nil。
     private func uint64(_ value: Any?) -> UInt64? {
         if let number = value as? NSNumber {
             return number.uint64Value

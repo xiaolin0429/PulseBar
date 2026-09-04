@@ -2,6 +2,7 @@ import XCTest
 @testable import PulseBarCore
 
 final class MemoryCollectorTests: XCTestCase {
+    /// 验证估算可用内存超过物理总量时被截断，并保留拆分、交换空间与压力信息。
     func testMemoryFormulaClampsAvailableToPhysicalTotal() async {
         let raw = RawVMStatistics(
             pageSize: 4,
@@ -32,6 +33,7 @@ final class MemoryCollectorTests: XCTestCase {
         XCTAssertEqual(value.pressure, .warning)
     }
 
+    /// 验证页数换算同时处理有效结果和乘法溢出。
     func testPageConversionRejectsOverflow() {
         XCTAssertNil(MemoryCollector.bytes(pages: .max, pageSize: 2))
         XCTAssertEqual(MemoryCollector.bytes(pages: 4, pageSize: 16_384), 65_536)

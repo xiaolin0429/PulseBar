@@ -34,6 +34,7 @@ struct PercentTrendChart: View {
         .accessibilityValue(chartAccessibilityValue(points))
     }
 
+    /// 为百分比趋势提供最近值朗读文本；没有历史时提供本地化空状态。
     private func chartAccessibilityValue(_ points: [HistoryPoint]) -> String {
         guard let latest = points.last else {
             return String(localized: "暂无历史数据", locale: locale)
@@ -132,6 +133,7 @@ struct ThroughputTrendChart: View {
         )
     }
 
+    /// 用十进制 K/M/G 缩写生成简短纵轴标签；非正值显示 0，不带 /s 后缀。
     private func shortRate(_ value: Double) -> String {
         guard value > 0 else { return "0" }
         if value >= 1_000_000_000 {

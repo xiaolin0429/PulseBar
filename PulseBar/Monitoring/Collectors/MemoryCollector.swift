@@ -5,6 +5,7 @@ public actor MemoryCollector {
     private let pressureReader: any MemoryPressureReading
     private let physicalMemoryProvider: @Sendable () -> UInt64
 
+    /// 注入 VM、压力状态和物理内存来源，便于独立验证内存口径与异常数据。
     public init(
         reader: any MemoryRawReading = MachMemoryRawReader(),
         pressureReader: any MemoryPressureReading = SystemMemoryPressureMonitor(),
@@ -17,6 +18,8 @@ public actor MemoryCollector {
         self.physicalMemoryProvider = physicalMemoryProvider
     }
 
+    /// 将 VM 页数转为字节，以空闲、非活跃、推测和可清除内存近似估算可用量。
+    /// 可用量不超过物理总量；交换空间失败只隐藏该字段，VM 读取或页数转换失败则整项不可用。
     public func sample() async -> MetricValue<MemorySnapshot> {
         do {
             let raw = try reader.readVMStatistics()
@@ -80,11 +83,13 @@ public actor MemoryCollector {
         }
     }
 
+    /// 将页数乘以当前系统页大小；发生整数溢出时返回 nil，而不是产生错误容量。
     static func bytes(pages: UInt64, pageSize: UInt64) -> UInt64? {
         let result = pages.multipliedReportingOverflow(by: pageSize)
         return result.overflow ? nil : result.partialValue
     }
 
+    /// 以饱和加法累计字节数，溢出时返回 UInt64.max，后续再按物理总量截断。
     private func saturatingSum(_ values: [UInt64]) -> UInt64 {
         values.reduce(0) { partial, value in
             let result = partial.addingReportingOverflow(value)

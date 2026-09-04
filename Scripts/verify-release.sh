@@ -7,6 +7,7 @@ derived_data="$(mktemp -d /tmp/pulsebar-release.XXXXXX)"
 release_app="$derived_data/Build/Products/Release-AppStore/PulseBar.app"
 release_binary="$release_app/Contents/MacOS/PulseBar"
 
+# 退出时清理本次验证专用的构建目录，不删除项目中的发行包。
 cleanup() {
     rm -rf "$derived_data"
 }

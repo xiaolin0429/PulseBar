@@ -6,6 +6,7 @@ project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 probe_root="$(mktemp -d /tmp/pulsebar-probe.XXXXXX)"
 probe_app="$probe_root/SystemMetricsProbe.app"
 
+# 退出时移除本次临时探针应用，保留 SwiftPM 的可复用构建缓存。
 cleanup() {
     rm -rf "$probe_root"
 }

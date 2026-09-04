@@ -93,6 +93,7 @@ struct NetworkCardView: View {
         }
     }
 
+    /// 构建上传或下载速率块，使用当前单位设置；预热等缺失值显示占位符。
     private func speed(
         title: LocalizedStringKey,
         symbol: String,
@@ -109,6 +110,7 @@ struct NetworkCardView: View {
         }
     }
 
+    /// 将路径状态映射为本地化连接说明，保留未知与待连接的区别。
     private func statusLabel(_ status: NetworkPathStatus) -> LocalizedStringKey {
         switch status {
         case .online: "在线"
@@ -118,6 +120,7 @@ struct NetworkCardView: View {
         }
     }
 
+    /// 为网络状态选择系统图标，确保离线与未知状态不只依赖颜色区分。
     private func statusIcon(_ status: NetworkPathStatus) -> String {
         switch status {
         case .online: "checkmark.circle.fill"
@@ -127,6 +130,7 @@ struct NetworkCardView: View {
         }
     }
 
+    /// 将在线、离线、待连接与未知状态映射为对应提示颜色。
     private func statusColor(_ status: NetworkPathStatus) -> Color {
         switch status {
         case .online: .green
@@ -136,6 +140,7 @@ struct NetworkCardView: View {
         }
     }
 
+    /// 生成接口类型标签，将两种有线类型统一显示为 Ethernet。
     private func kindLabel(_ kind: NetworkInterfaceKind) -> String {
         switch kind {
         case .wifi: "Wi‑Fi"

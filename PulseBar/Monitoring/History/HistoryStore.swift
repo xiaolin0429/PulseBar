@@ -28,8 +28,11 @@ public struct HistoryStore: Sendable {
     private var networkDownload = RingBuffer<HistoryPoint>(capacity: 360)
     private var networkUpload = RingBuffer<HistoryPoint>(capacity: 360)
 
+    /// 创建六条固定容量历史序列，每条最多保留 360 个点。
     public init() {}
 
+    /// 把快照中可取出的指标写入环形缓存；预热、不可用和缺失速率不补零。
+    /// 这里的 availableValue 也包含 stale 值，因此降级期间可能记录旧值。
     public mutating func append(_ snapshot: SystemSnapshot) {
         if let value = snapshot.cpu.availableValue?.totalUsageRatio {
             cpu.append(point(value, from: snapshot))
@@ -55,6 +58,7 @@ public struct HistoryStore: Sendable {
         }
     }
 
+    /// 按指定时间窗口生成界面历史数组；仅在需要展示时调用，以减少后台数组分配。
     public func snapshot(
         endingAt now: ContinuousClock.Instant,
         window: HistoryWindow
@@ -69,6 +73,7 @@ public struct HistoryStore: Sendable {
         )
     }
 
+    /// 复用采样序号及双时钟时间戳，使不同指标能对应同一次采样。
     private func point(_ value: Double, from snapshot: SystemSnapshot) -> HistoryPoint {
         HistoryPoint(
             sequence: snapshot.sequence,
@@ -78,6 +83,7 @@ public struct HistoryStore: Sendable {
         )
     }
 
+    /// 使用单调时钟筛选窗口内的点，避免系统日期调整影响历史过期判断。
     private func trimmed(
         _ values: [HistoryPoint],
         endingAt now: ContinuousClock.Instant,

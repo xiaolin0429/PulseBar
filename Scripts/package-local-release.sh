@@ -2,6 +2,7 @@
 
 set -euo pipefail
 
+# 输出本地打包选项；--launch 会重启目标产物，默认只打包不影响运行中的应用。
 usage() {
     cat <<'EOF'
 Usage: Scripts/package-local-release.sh [options]
@@ -74,6 +75,7 @@ for required_command in "${required_commands[@]}"; do
     fi
 done
 
+# 只返回命令路径匹配目标二进制的 PulseBar 进程，避免重启其他位置的应用副本。
 pids_for_binary() {
     local target_binary="$1"
     local process_command
@@ -115,6 +117,8 @@ previous_zip=""
 final_app=""
 final_zip=""
 
+# 交付中断且目标缺失时恢复旧产物，再删除本次候选文件和临时工作目录。
+# 若新目标已经存在则不会回滚，故这不是对所有校验失败的完整事务回滚。
 cleanup() {
     if [[ -n "$previous_app" && -e "$previous_app" && -n "$final_app" && ! -e "$final_app" ]]; then
         mv "$previous_app" "$final_app"

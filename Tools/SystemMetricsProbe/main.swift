@@ -3,6 +3,7 @@ import PulseBarCore
 
 @main
 struct SystemMetricsProbe {
+    /// 打印运行环境并逐项探测公开指标来源，最后执行一次相邻采样差分。
     static func main() async {
         print("PulseBar System Metrics Probe")
         print("architecture: \(architecture)")
@@ -42,6 +43,7 @@ struct SystemMetricsProbe {
         await probeDeltas()
     }
 
+    /// 计时执行单项读取并打印 PASS；失败时打印 DEGRADED，不阻断后续探测。
     private static func timedProbe(_ name: String, operation: () throws -> String) {
         let clock = ContinuousClock()
         let started = clock.now
@@ -54,6 +56,8 @@ struct SystemMetricsProbe {
         }
     }
 
+    /// 间隔约 1 秒读取两轮计数，以实际间隔输出 CPU 比例和磁盘/网络速率。
+    /// 这是来源连通性探针，不能替代采集器的完整边界处理或 UI 性能验收。
     private static func probeDeltas() async {
         let cpuReader = MachCPURawReader()
         let diskReader = IOKitDiskRawReader()
@@ -95,6 +99,7 @@ struct SystemMetricsProbe {
         )
     }
 
+    /// 按对应核心累加 ticks 差计算 CPU 比例；核心数变化、回退或无增量时返回 nil。
     private static func cpuUsage(
         previous: [CPUTickCounter],
         current: [CPUTickCounter]
@@ -118,6 +123,7 @@ struct SystemMetricsProbe {
         return min(1, max(0, Double(active) / Double(total)))
     }
 
+    /// 按设备 ID 累加两轮读写差值，跳过新增设备和回退计数，仅用于诊断输出。
     private static func aggregateDelta(
         previous: [DiskDeviceCounter],
         current: [DiskDeviceCounter]
@@ -132,6 +138,7 @@ struct SystemMetricsProbe {
         }
     }
 
+    /// 计算指定主接口的累计收发差值；接口缺失或计数回退时以零差值兜底。
     private static func networkDelta(
         interfaceName: String?,
         previous: [InterfaceCounter],
@@ -147,6 +154,7 @@ struct SystemMetricsProbe {
         return (new.receivedBytes - old.receivedBytes, new.sentBytes - old.sentBytes)
     }
 
+    /// 将探针结果保留两位小数，便于阅读耗时与速率。
     private static func format(_ value: Double) -> String {
         value.formatted(.number.precision(.fractionLength(2)))
     }

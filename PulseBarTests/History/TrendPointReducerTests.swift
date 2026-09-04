@@ -3,12 +3,14 @@ import XCTest
 @testable import PulseBarCore
 
 final class TrendPointReducerTests: XCTestCase {
+    /// 验证点数不超预算时直接保留原始序列。
     func testReturnsInputWhenAlreadyWithinLimit() {
         let input = points(values: [0.1, 0.2, 0.3])
 
         XCTAssertEqual(TrendPointReducer.reduce(input, maximumCount: 3), input)
     }
 
+    /// 验证上限为 1 时只保留最新点，为 2 时保留首尾点。
     func testHandlesSingleAndTwoPointLimits() {
         let input = points(values: [0.1, 0.2, 0.3, 0.4])
 
@@ -22,6 +24,7 @@ final class TrendPointReducerTests: XCTestCase {
         )
     }
 
+    /// 验证这组输入的首尾和桶内峰谷在给定预算内保留，输出序号仍递增。
     func testPreservesEndpointsAndBucketExtremaWithinLimit() {
         var values = Array(repeating: 0.5, count: 120)
         values[24] = 0.98
@@ -42,12 +45,14 @@ final class TrendPointReducerTests: XCTestCase {
         XCTAssertEqual(reduced.map(\.sequence), reduced.map(\.sequence).sorted())
     }
 
+    /// 验证 360 点长历史在默认策略下最多输出 60 个绘图点。
     func testDefaultLimitBoundsLongHistory() {
         let input = points(values: (0..<360).map { Double($0 % 17) })
 
         XCTAssertLessThanOrEqual(TrendPointReducer.reduce(input).count, 60)
     }
 
+    /// 按一秒间隔生成时间和序号一致的历史点，供降采样测试使用。
     private func points(values: [Double]) -> [HistoryPoint] {
         let clock = ContinuousClock()
         let start = clock.now
