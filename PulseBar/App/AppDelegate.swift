@@ -92,12 +92,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 .environment(\.unitSystem, model.settings.unitSystem)
                 .environment(\.locale, model.settings.language.locale ?? .current)
         )
-        dashboardWindow = present(
+        let window = present(
             existing: dashboardWindow,
             title: "PulseBar",
             size: NSSize(width: 420, height: 650),
             rootView: root
         )
+        window.delegate = self
+        dashboardWindow = window
     }
 
     /// 接收 SwiftUI 设置视图所属的真实 NSWindow，并兑现首次创建时挂起的置前请求。
@@ -131,7 +133,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 
-    /// 统一创建或复用辅助窗口；复用时替换内容，关闭后保留窗口供下次展示。
+    /// 统一创建或复用辅助窗口；复用时替换内容，具体关闭策略由调用方管理。
     private func present(
         existing: NSWindow?,
         title: String,
@@ -157,5 +159,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.makeKeyAndOrderFront(nil)
         NSApplication.shared.activate(ignoringOtherApps: true)
         return window
+    }
+}
+
+extension AppDelegate: NSWindowDelegate {
+    /// 独立监控窗口关闭时显式卸载 SwiftUI 内容，不能只依赖视图的 onDisappear。
+    func windowWillClose(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow,
+              window === dashboardWindow else {
+            return
+        }
+
+        Self.model?.setDashboardVisible(false)
+        window.contentViewController = nil
+        window.delegate = nil
+        dashboardWindow = nil
     }
 }
