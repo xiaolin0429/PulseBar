@@ -352,7 +352,7 @@ I/O 失败时 `DiskSnapshot` 仍携带容量，`ioState` 独立标记不可用�
 
 ### 11.3 面板隐藏
 
-以下清理依赖 `DashboardView.onDisappear` 将可见性通知给 `AppModel`：
+菜单栏面板隐藏时由 `DashboardView.onDisappear` 通知 `AppModel`；独立窗口另由 `NSWindowDelegate.windowWillClose` 显式通知并卸载 Hosting 内容，避免只依赖 SwiftUI 消失回调：
 
 - `DashboardPresentationState.hide()` 将内容替换为空。
 - `DashboardView` 用同尺寸 `Color.clear` 壳替换卡片树。
@@ -360,7 +360,7 @@ I/O 失败时 `DiskSnapshot` 仍携带容量，`ioState` 独立标记不可用�
 - 历史继续固定容量写入，但不物化数组给 UI。
 - 菜单栏继续接收轻量摘要。
 
-该路径用于解除 Dashboard 对快照数组、图形 Shape 和 SwiftUI 渲染层的持有。2026-08-31 真机矩阵确认菜单栏冷后台达到 0.290% CPU / 16.5 MiB footprint，但独立 `NSWindow` 关闭后仍为 2.745% / 38.9 MiB。该独立窗口由 `AppDelegate` 持有且 `isReleasedWhenClosed = false`，关闭路径当前未达到本节设计目标，必须修复后再验收。
+该路径用于解除 Dashboard 对快照数组、图形 Shape 和 SwiftUI 渲染层的持有。2026-09-05 的 Release-AppStore 真机复测中，独立窗口关闭后最后 20 秒 CPU 平均为 0.295%，满足隐藏态低于 1% 的目标；Time Profiler 的 30 秒录制为 0.460% 采样 CPU，未出现 Dashboard 调用栈。静默后 `NSWindow`、`NSHostingViewBase`、`ViewGraphHost` 均不再存活，`ViewGraph` 数量回到冷启的 6 个。physical footprint 保持约 30–32 MiB，高于 16.4 MiB 冷启值，但多次开关没有持续增长，Leaks 与冷启只相差 32 B 的系统 `NSXPCConnection` 循环，因此不作为完整 Dashboard 树仍被持有的证据。
 
 ## 12. 菜单栏渲染
 
@@ -523,10 +523,10 @@ App、Features 和 Resources 不进入核心 target，使采集算法可在无 U
 | 采集性能预算 | 通过 |
 | 图形 120 秒内存预算 | 通过 |
 | 五分钟稳态 | 通过 |
-| 隐藏态低 CPU | 冷启仅菜单栏通过；独立窗口关闭后未通过（最后 20 秒平均 2.745%） |
-| 隐藏面板资源释放机制 | 代码机制已实现；独立窗口关闭后 footprint 仍为 38.9 MiB，未回到 16.5 MiB 冷启基线 |
+| 隐藏态低 CPU | 通过；独立窗口关闭后最后 20 秒平均 0.295%，Time Profiler 30 秒为 0.460% 采样 CPU |
+| 隐藏面板资源释放机制 | 通过；关闭后卸载 Hosting 内容，静默后窗口/Hosting/ViewGraph 对象回到冷启基线；暖态 footprint 稳定在约 30–32 MiB |
 | macOS 13/14/15 与 Intel 矩阵 | 待验证 |
-| 8/24 小时与 Instruments | 待验证 |
+| 8/24 小时与 Instruments | 关闭路径的 Allocations、Leaks、Time Profiler 已复核；长稳、Energy 与 Idle Wake Ups 待验证 |
 | Apple 发行签名、公证、TestFlight/App Store | 待执行 |
 
 ## 19. v1.1 扩展边界

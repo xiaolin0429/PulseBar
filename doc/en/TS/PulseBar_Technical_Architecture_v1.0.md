@@ -358,7 +358,7 @@ The application does not link `Charts.framework`, avoiding the former 134–140 
 
 ### 11.3 Dashboard hides
 
-The following cleanup depends on `DashboardView.onDisappear` notifying `AppModel` of the visibility change:
+The menu-bar panel uses `DashboardView.onDisappear` to notify `AppModel`; the standalone window additionally uses `NSWindowDelegate.windowWillClose` to notify explicitly and unload Hosting content instead of depending only on a SwiftUI disappearance callback:
 
 - `DashboardPresentationState.hide()` replaces content with empty state.
 - `DashboardView` replaces the card tree with a same-size `Color.clear` shell.
@@ -366,7 +366,7 @@ The following cleanup depends on `DashboardView.onDisappear` notifying `AppModel
 - Fixed-capacity history continues, but arrays are not materialized for UI.
 - The menu bar continues through the lightweight summary.
 
-This path is intended to break Dashboard ownership of snapshot arrays, chart Shapes, and SwiftUI render layers. The 2026-08-31 hardware matrix confirms 0.290% CPU / 16.5 MiB footprint for the cold menu-bar background state, but the standalone `NSWindow` remains at 2.745% / 38.9 MiB after close. That window is retained by `AppDelegate` with `isReleasedWhenClosed = false`; its close path does not currently meet this section's design target and must be fixed before acceptance.
+This path breaks Dashboard ownership of snapshot arrays, chart Shapes, and SwiftUI render layers. In the 2026-09-05 Release-AppStore hardware retest, the final 20 post-close seconds averaged 0.295% CPU, passing the below-1% hidden-state target. A 30-second Time Profiler trace measured 0.460% sampled CPU with no Dashboard stack. After settling, `NSWindow`, `NSHostingViewBase`, and `ViewGraphHost` were no longer live, and the `ViewGraph` count returned to the cold-launch baseline of six. Physical footprint remained near 30–32 MiB rather than the 16.4 MiB cold value, but repeated cycles did not grow and Leaks differed from cold launch only by a 32-byte system `NSXPCConnection` cycle, so the warm footprint is not evidence that the full Dashboard tree remains retained.
 
 ## 12. Menu bar rendering
 
@@ -529,10 +529,10 @@ The repository currently has no hosted CI workflow. These scripts are the canoni
 | Collector performance budget | Passed |
 | 120-second visible-chart memory budget | Passed |
 | Five-minute steady state | Passed |
-| Hidden-state low CPU | Cold menu-bar-only state passes; standalone-window post-close state fails (final-20-second average 2.745%) |
-| Hidden-dashboard resource-release mechanism | Code mechanism implemented; standalone-window post-close footprint remains 38.9 MiB instead of the 16.5 MiB cold baseline |
+| Hidden-state low CPU | Passed; standalone-window final 20 post-close seconds average 0.295%, and a 30-second Time Profiler trace records 0.460% sampled CPU |
+| Hidden-dashboard resource-release mechanism | Passed; close unloads Hosting content and settled window/Hosting/ViewGraph objects return to the cold baseline; warm footprint remains stable near 30–32 MiB |
 | macOS 13/14/15 and Intel matrix | Pending |
-| 8/24-hour and Instruments | Pending |
+| 8/24-hour and Instruments | Close-path Allocations, Leaks, and Time Profiler checked; soak, Energy, and Idle Wake Ups pending |
 | Apple distribution signing, notarization, TestFlight/App Store | Pending |
 
 ## 19. v1.1 extension boundary
