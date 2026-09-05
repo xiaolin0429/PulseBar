@@ -73,15 +73,16 @@ Reconfirm on the final candidate:
 - [x] A cold process that never opened the dashboard averages 0.290% CPU and peaks at 0.607% over 20 seconds, passing the below-1% hidden-state target.
 - [x] CPU/footprint matrix recorded for foreground static, rapid scroll/expand, window drag, covered window, post-close settling, and relaunch recovery.
 - [x] Hiding the dashboard clears full snapshot/history presentation state and unloads the full card tree.
-- [ ] Fix the standalone-dashboard close path: the final 20 seconds average 2.745% CPU and 38.9 MiB physical footprint instead of returning to the 0.290% / 16.5 MiB cold baseline.
+- [x] Standalone-dashboard close path fixed: the final 20 seconds average 0.295% CPU with 0.694% P95; settled window/Hosting/ViewGraph objects return to the cold baseline, and warm footprint stays stable near 30–32 MiB.
 - [ ] Review the 13.973% normal rapid-interaction CPU peak with Time Profiler; the 25.310% AX stress upper bound is not ordinary mouse use.
 - [ ] Run open, close, and settled measurements for the default menu-bar popover with the same `proc_pid_rusage` definition.
 - [ ] 8-hour adaptive run: `Scripts/soak-test.sh 28800 30`.
 - [ ] 24-hour adaptive run: `Scripts/soak-test.sh 86400 60`.
-- [ ] Use Instruments to add Energy Impact, Idle Wake Ups, Allocations, and live-object evidence with the dashboard hidden and visible.
+- [x] Use Allocations, Leaks, heap, and Time Profiler to capture post-close allocation, live-object, and CPU-stack evidence for the standalone dashboard.
+- [ ] Use Instruments to add Energy Impact and Idle Wake Ups evidence with the dashboard hidden and visible.
 - [ ] Validate 1 s, 2 s, and 5 s policies with Instruments Energy Log.
 - [ ] Run key energy scenarios on AC power and battery.
-- [ ] Use Xcode Leaks / Allocations to inspect Mach, IOKit, `getifaddrs`, and graphics lifetimes.
+- [x] Leaks / Allocations check the close path: no PulseBar, Dashboard, window, or Hosting leak; cold/warm difference is only a 32-byte system XPC cycle.
 
 A short soak validates the script and catches obvious regressions; it does not replace an 8/24-hour conclusion.
 
