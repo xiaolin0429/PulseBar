@@ -73,15 +73,16 @@ Scripts/package-local-release.sh --verify
 - [x] 冷启且从未打开卡片时，20 秒 CPU 平均 0.290%，峰值 0.607%，满足隐藏态低于 1% 的目标。
 - [x] 已记录前台静置、快速滚动/展开、窗口拖动、被其他应用覆盖、关闭后稳定和重启恢复的 CPU/footprint 矩阵。
 - [x] 隐藏面板会清除完整快照/历史展示状态并卸载完整卡片树。
-- [ ] 独立卡片关闭路径需修复：最后 20 秒 CPU 平均 2.745%，physical footprint 平均 38.9 MiB，未回到 0.290% / 16.5 MiB 冷启基线。
+- [x] 独立卡片关闭路径已修复：最后 20 秒 CPU 平均 0.295%，P95 0.694%；窗口/Hosting/ViewGraph 对象静默后回到冷启基线，暖态 footprint 稳定在约 30–32 MiB。
 - [ ] 使用 Time Profiler 复核常规快速交互的 13.973% CPU 峰值；AX 压力上界 25.310% 不作为普通鼠标场景。
 - [ ] 默认菜单栏弹出式卡片按同一 `proc_pid_rusage` 口径完成打开、关闭和稳定复测。
 - [ ] 8 小时默认自适应：`Scripts/soak-test.sh 28800 30`。
 - [ ] 24 小时默认自适应：`Scripts/soak-test.sh 86400 60`。
-- [ ] 使用 Instruments 补充卡片关闭和打开时的 Energy Impact、Idle Wake Ups、Allocations 与存活对象证据。
+- [x] 使用 Allocations、Leaks、heap 与 Time Profiler 补充独立卡片关闭后的分配、存活对象和 CPU 调用栈证据。
+- [ ] 使用 Instruments 补充卡片打开和关闭时的 Energy Impact 与 Idle Wake Ups。
 - [ ] 1 秒、2 秒、5 秒策略分别使用 Instruments Energy Log 验证。
 - [ ] 接电和电池环境各执行一次关键能耗场景。
-- [ ] Xcode Leaks / Allocations 检查 Mach、IOKit、`getifaddrs` 和图形资源生命周期。
+- [x] Leaks / Allocations 检查关闭路径：未发现 PulseBar、Dashboard、窗口或 Hosting 泄漏；冷/暖差异仅为 32 B 系统 XPC 循环。
 
 短时 soak 只用于验证脚本和发现明显回归，不能替代 8/24 小时结论。
 

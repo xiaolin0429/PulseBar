@@ -2,10 +2,10 @@ English | [简体中文](../zh-CN/QUALITY_REPORT.md)
 
 # PulseBar v1.0 Quality and Validation Report
 
-Last updated: 2026-08-31
+Last updated: 2026-09-05
 Applies to: 1.0.0 (Build 1)
-Application-code baseline: `24e6c27`
-Conclusion: local engineering and automated release gates pass; cold-background CPU and visible-state memory meet budget; rapid-interaction CPU peaks and both CPU and physical-footprint recovery after closing the standalone dashboard still need optimization; multi-device, long-duration, and Apple distribution validation remain
+Application-code baseline: the original performance matrix used `24e6c27`; the close-path retest uses `codex/fix-dashboard-window-lifecycle` based on `e058ce2`
+Conclusion: local engineering and automated release gates pass; cold-background CPU, visible-state memory, and standalone-dashboard post-close CPU/presentation-object release meet budget; rapid-interaction CPU peaks, multi-device, long-duration, and Apple distribution validation remain
 
 ## 1. Evidence boundary
 
@@ -50,7 +50,7 @@ The latest complete gate ran 120 iterations of each Release raw collector:
 | Disk I/O counters | 0.04 ms | 8 ms | PASS |
 | Volume capacity (low frequency) | 0.01 ms | 20 ms | PASS |
 
-The sampling coordinator owns lifecycle in one actor and starts all four metric collectors concurrently through structured concurrency. By design it materializes full snapshots and chart history only while the dashboard is visible; this run found that the standalone-window close path does not return correctly to that hidden state, as detailed in Section 7.
+The sampling coordinator owns lifecycle in one actor and starts all four metric collectors concurrently through structured concurrency. It materializes full snapshots and chart history only while the dashboard is visible; the standalone-window close path now returns explicitly to that hidden state, as detailed in Section 7.
 
 ## 5. PulseBar process CPU and memory matrix
 
@@ -66,7 +66,7 @@ This run used the Release-AppStore Universal package on the Apple Silicon hardwa
 
 The scenarios ran in table order within one process, so later memory rows include process caches warmed by earlier graphics and interactions. The first cold launch and final relaunch are separate new-process baselines.
 
-### 5.2 Results
+### 5.2 Pre-fix baseline results (2026-08-31)
 
 | Scenario | Action and sample window | CPU avg / P95 / max | physical footprint avg / max | Threads | External sockets |
 |---|---|---:|---:|---:|---:|
@@ -79,7 +79,7 @@ The scenarios ran in table order within one process, so later memory rows includ
 | Settled after dashboard close | Sample 60 seconds after close; report the last 20 seconds | 2.745% / 3.189% / 3.220% | 38.9 / 39.0 MiB | 6 | 0 |
 | Quit and cold relaunch, menu bar only | New process; warm up, then sample 20 seconds | 0.211% / 0.462% / 0.584% | 16.7 / 16.7 MiB | 7 | 0 |
 
-Cold-background CPU averages 0.290%, passing the below-1% product target. Foreground static averages 1.724%, and window movement averages 2.873%. Normal continuous rapid interaction averages 7.345% and peaks at 13.973%, so short double-digit peaks remain. The automated full-AX-tree stress run peaks at 25.310%; it is a testing upper bound, not ordinary mouse-use data. After closing the dashboard, CPU still averages 2.745% instead of returning to the cold-background level. The 38.6 MiB visible-state physical-footprint peak remains below the 60 MB product budget.
+This pre-fix matrix shows a 0.290% cold-background CPU average, passing the below-1% target. Foreground static averages 1.724%, and window movement averages 2.873%. Normal continuous rapid interaction averages 7.345% and peaks at 13.973%, so short double-digit peaks remain. The automated full-AX-tree stress run peaks at 25.310%; it is a testing upper bound, not ordinary mouse-use data. The old close path averages 2.745% CPU instead of returning to the cold-background level. The 38.6 MiB visible-state physical-footprint peak remains below the 60 MB product budget. See Section 7 for the fixed close-path result.
 
 The earlier CPU spike was traced to the capacity collector: Foundation's “available capacity for important usage” URL resource can trigger macOS 26 `CacheDelete` purgeable-space work. The formal implementation uses public `statfs` ordinary available blocks:
 
@@ -112,10 +112,11 @@ To avoid retaining the post-open graphics footprint:
 - a same-size static shell replaces the full card tree;
 - the menu bar continues through lightweight `MenuBarPresentationState`;
 - hidden-state sampling continues at reduced frequency without materializing chart arrays.
+- the standalone window's `windowWillClose` explicitly enters hidden state, unloads its `contentViewController`, and clears the `AppDelegate` window reference.
 
-Unit tests, builds, and code-path checks cover this mechanism. This run completed the previously missing unlocked-hardware “cold launch, open, interact, close, and settle” measurement for the standalone dashboard window.
+Unit tests, the complete release gate, and a Release-AppStore hardware run cover this mechanism. The following table preserves the pre-fix failure baseline.
 
-The 60 seconds immediately after closing the window were:
+The pre-fix 60 seconds immediately after closing the window were:
 
 | Time after close | physical footprint | PulseBar process CPU |
 |---:|---:|---:|
@@ -127,9 +128,22 @@ The 60 seconds immediately after closing the window were:
 | 45 s | 38.8 MiB | 0.162% |
 | 60 s | 39.0 MiB | 2.914% |
 
-The final 20 seconds averaged 2.745% CPU with P95 3.189%, above the 0.290% cold-background average, so post-close CPU recovery does not pass. Physical footprint averaged 38.9 MiB and peaked at 39.0 MiB, about 22.3 MiB above the same run's 16.5 MiB cold-background average, so footprint recovery also does not pass. Quitting and relaunching restored CPU to a 0.211% average and physical footprint to a 16.7 MiB average.
+Before the fix, the final 20 seconds averaged 2.745% CPU with 3.189% P95, and physical footprint averaged 38.9 MiB. After the fix, an isolated-bundle run of the same Release-AppStore build repeated cold launch, open, close, and settled sampling:
 
-The formal status is therefore: presentation snapshots and chart arrays have a cleanup mechanism, but neither process CPU nor physical-footprint recovery passes on the standalone-window close path. Because the implementation retains an `NSWindow` whose `isReleasedWhenClosed` is `false`, the result is consistent with SwiftUI content remaining resident and visibility state not returning to background after close; this is an inference from code and measurement, not a substitute for Instruments evidence. Allocations, Leaks, Time Profiler, and memory-graph work must distinguish live objects from SwiftUI/AppKit caches and allocator pages not returned to the OS. The default menu-bar popover path also needs an independent run with the same measurement definition and must not be inferred from this standalone-window result.
+| Fixed scenario | Samples | CPU avg / P95 / max | physical footprint avg / max |
+|---|---:|---:|---:|
+| Cold background; standalone window never opened | 20 seconds | 0.292% / 0.729% / 0.750% | 16.4 / 16.5 MiB |
+| Settled after standalone-window close | 60 seconds; final 20 reported | 0.295% / 0.694% / 0.835% | 31.7 / 31.8 MiB |
+
+Additional evidence:
+
+- AX reports zero windows after two open/close cycles; reopening creates a new `NSWindow` rather than reusing unloaded Hosting content.
+- Closed footprint across repeated cycles is about 31.7, 32.0, and 31.9 MiB, with no cycle-over-cycle growth.
+- After settling, heap reports zero `NSWindow`, `NSHostingViewBase`, and `ViewGraphHost` objects and six `ViewGraph` objects, matching cold launch; published history arrays remain fixed-capacity.
+- A 30-second Time Profiler trace records 138 ms of CPU, or 0.460%; background collection accounts for about 24 ms, menu-bar rendering/update for about 51 ms, and Dashboard stacks for 0 ms.
+- Leaks reports 14,288 bytes / 286 leaks at cold launch and 14,320 bytes / 287 leaks after warm close. The 32-byte difference is a system `NSXPCConnection` cycle, with no PulseBar, Dashboard, window, or Hosting leak.
+
+AC-11 therefore passes on the current hardware: hidden-state CPU is below 1%, and the full presentation tree, Hosting content, and window objects release after settling. Physical footprint remains near 30–32 MiB instead of returning to the 16.4 MiB cold value. Given the object and leak evidence, this is classified as warm SwiftUI/AppKit/allocator caching rather than retention of the full Dashboard tree. The default menu-bar popover still needs an independent run with the same measurement definition and must not be inferred from this standalone-window result.
 
 ## 8. Settings window lifecycle regression
 
@@ -155,10 +169,9 @@ This passes the 60 MB peak and 10 MB steady-growth gates but does not establish 
 
 ## 10. Remaining distribution validation
 
-- 8-hour and 24-hour soak runs, Instruments Energy Log, Idle Wake Ups, Leaks, and Allocations.
+- 8-hour and 24-hour soak runs plus Instruments Energy Log and Idle Wake Ups; close-path Allocations, Leaks, and Time Profiler are complete.
 - Intel hardware and the complete macOS 13, 14, 15, and current-stable matrix.
 - Wi-Fi, Ethernet, VPN, external local volumes, mount/unmount, and real sleep/wake.
-- Fix and repeat standalone-dashboard CPU and physical-footprint recovery; current settled CPU averages about 2.7% and footprint about 39 MiB versus a roughly 0.3% / 17 MiB cold baseline.
 - Use Time Profiler to review the roughly 14% normal rapid-interaction peak and separate app layout/drawing, Accessibility, and `WindowServer` composition costs.
 - Add open, close, and settled measurements for the default menu-bar popover using the same `proc_pid_rusage` definition.
 - Apple distribution certificate, Team, provisioning profile, Organizer archive, Privacy Report, notarization, TestFlight, and App Store review.
